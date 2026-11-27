@@ -82,6 +82,14 @@ Comprehensive registry of all first-party modules and major components.
 
 *Status tags: `[Verified]`, `[Inferred]`, `[Unverified]`, `[Stale]`*
 
+### Sub-Blueprints Index (Distributed Mode)
+*(Optional: Use when project is split into domain-specific sub-blueprints; omit or mark N/A for single-file mode)*
+
+| Domain / Service | Sub-Blueprint Path | Scope / Root Path | Status |
+| :--- | :--- | :--- | :--- |
+| `API` | `.agents/sub-blueprints/api.md` | `apps/api` | [Verified] |
+| `Web` | `.agents/sub-blueprints/web.md` | `apps/web` | [Verified] |
+
 ---
 
 ## 6. Dependency Mapping

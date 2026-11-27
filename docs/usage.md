@@ -152,3 +152,135 @@ Codsblu ships with two official GitHub Actions workflows in `.github/workflows/`
 1. `codsblu-validate.yml`: Runs on push and PR to ensure blueprint syntax, table structure, and referenced files are valid.
 2. `codsblu-architecture-check.yml`: Analyzes PR file deltas and posts a warning annotation if code files were changed without synchronizing `.agents/codebase-map.md`.
 
+---
+
+## 6. v1.2.0 Distributed Architecture & Automation Tooling
+
+Version 1.2.0 introduces the unified `codsblu` CLI, multi-file (distributed) blueprint support, and a background filesystem watcher.
+
+### A. Unified CLI: `codsblu`
+
+The `codsblu` command is the primary interface for all blublu operations from your terminal. Cross-platform launchers are included:
+
+| Platform | Launcher |
+|---|---|
+| Linux / macOS | `scripts/codsblu` (POSIX shell wrapper) |
+| Windows PowerShell | `scripts/codsblu.ps1` |
+| Windows CMD | `scripts/codsblu.cmd` |
+| Direct Python | `python scripts/codsblu.py <command>` |
+
+#### Commands
+
+```bash
+# Initialize blueprint (single-file mode, default)
+codsblu init [--path <project-dir>]
+
+# Initialize with distributed sub-blueprint support
+codsblu init --distributed [--path <project-dir>]
+
+# Show current blueprint health, mode, and stats
+codsblu status [--path <project-dir>] [--format json]
+
+# Validate blueprint structure, paths, and sub-blueprints
+codsblu validate [--path <project-dir>] [--check-files] [--check-staleness] [--strict] [--format json]
+
+# Migrate a single-file blueprint to distributed mode
+codsblu migrate --to-distributed [--path <project-dir>]
+
+# Start the background filesystem watcher (debounced change detection)
+codsblu watch [--path <project-dir>] [--debounce <ms>] [--interval <seconds>]
+
+# Stop the background watcher
+codsblu stop [--path <project-dir>]
+```
+
+#### Global Options
+
+| Flag | Default | Description |
+|---|---|---|
+| `--path <dir>` | `.` (current dir) | Root directory of the project to operate on |
+| `--format text\|json` | `text` | Output format for `status` and `validate` |
+| `--strict` | off | Exit code 1 on warnings (staleness, orphaned sub-blueprints) |
+| `--check-files` | off | Verify that all referenced paths exist on disk |
+| `--check-staleness` | off | Flag modules whose source files are newer than the blueprint |
+
+---
+
+### B. Distributed Blueprint Mode
+
+For projects with many independent domains, v1.2.0 supports a **distributed** architecture where the root `.agents/codebase-map.md` acts as an index pointing to per-domain sub-blueprints stored in `.agents/sub-blueprints/`.
+
+#### Directory Layout (Distributed)
+
+```
+.agents/
+├── codebase-map.md              ← Root index (always loaded first)
+└── sub-blueprints/
+    ├── api.md                   ← Domain: API service
+    ├── web.md                   ← Domain: Web frontend
+    └── auth.md                  ← Domain: Auth service
+```
+
+#### Progressive Loading Rule (Mandatory)
+Agents **must not** load all sub-blueprints at once. The correct loading procedure is:
+
+1. **Always read `codebase-map.md` first** — this contains the Sub-Blueprints Index (Section 5).
+2. **Identify which domain(s) are touched** by the current user prompt.
+3. **Load only the matching sub-blueprint(s)** — ignore all others.
+
+```
+User prompt: "Add rate limiting to the API checkout route"
+                        │
+                        ▼
+         Load: .agents/codebase-map.md (index)
+                        │
+                        ▼
+         Identify: "API" domain is touched
+                        │
+                        ▼
+         Load: .agents/sub-blueprints/api.md ONLY
+         Skip: web.md, auth.md (not relevant)
+```
+
+#### Migrating to Distributed Mode
+
+```bash
+# Migrate an existing single-file project
+codsblu migrate --to-distributed --path /your/project
+
+# Verify the migration result
+codsblu validate --path /your/project --check-files --strict
+```
+
+---
+
+### C. Background Filesystem Watcher (`codsblu watch`)
+
+The watcher monitors your project directory continuously and writes pending change events to `.agents/.pending-changes.json` for the agent to consume at the start of the next session.
+
+```bash
+# Start watcher with 500ms debounce (default)
+codsblu watch
+
+# Custom debounce: 1000ms, polling every 5 seconds
+codsblu watch --debounce 1000 --interval 5
+
+# Stop the background watcher process
+codsblu stop
+```
+
+**What it tracks:**
+- New, modified, deleted, and renamed source files.
+- Ignores: `node_modules/`, `vendor/`, `.git/`, `dist/`, `build/`, `coverage/`, `.next/`, `.cache/`, `__pycache__/`.
+- PID file: `.agents/.codsblu.pid` (auto-cleaned on stop).
+- Output: `.agents/.pending-changes.json` (read by agent at session start; excluded from git via `.gitignore`).
+
+> [!NOTE]
+> The watcher is fully deterministic and stateless — it performs no LLM calls, no network requests, and no blueprint writes on its own. It only accumulates metadata for the next agent session to consume.
+
+---
+
+### D. CI/CD Validation with v1.2.0 Distributed Support
+
+The existing GitHub Actions workflows (`codsblu-validate.yml`, `codsblu-architecture-check.yml`) automatically handle both single-file and distributed modes — no CI configuration changes are required when migrating a project to distributed mode.
+

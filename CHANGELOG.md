@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-11-27
+
+### Added
+- **Distributed Sub-Blueprints Architecture (`.agents/sub-blueprints/`)**:
+  - Sub-blueprint schema specification (`skills/blublu/references/sub-blueprint-template.md`).
+  - `Sub-Blueprints Index` integration in Section 5 of `.agents/codebase-map.md`.
+  - Context-Aware / Progressive Loading rule for AI agents (root index first, zero premature bulk loading).
+- **Unified Standalone CLI Engine (`scripts/codsblu.py`)**:
+  - `codsblu init [--distributed]`: Instant bootstrap of single-file or distributed architecture.
+  - `codsblu status`: Comprehensive architecture health summary, mode detection, and background watcher status.
+  - `codsblu validate`: End-to-end multi-blueprint validation, broken path check, and orphaned sub-blueprint detection.
+  - `codsblu migrate --to-distributed`: Intelligent automated decomposition of single-file maps into domain sub-blueprints.
+  - `codsblu watch` & `codsblu stop`: Background filesystem watcher lifecycle management.
+- **Cross-Platform CLI Wrappers**:
+  - `scripts/codsblu` (POSIX Bash wrapper for Linux & macOS).
+  - `scripts/codsblu.ps1` & `scripts/codsblu.cmd` (PowerShell and Batch wrappers for Windows).
+- **Local Filesystem Change Watcher (`scripts/watcher.py`)**:
+  - Polling event loop with configurable debounce delay (default 2000ms).
+  - Deterministic event queue in `.agents/.pending-changes.json`.
+  - Process PID tracking in `.agents/.codsblu.pid`.
+  - Strict security guardrail: strictly zero automated remote paid LLM API calls.
+- **Validator Upgrade for Distributed Mode (`scripts/validate-blueprint.py`)**:
+  - Auto-discovery of registered sub-blueprints and cross-validation against physical disk files.
+  - Orphaned sub-blueprint detection (`.agents/sub-blueprints/*.md` unindexed in root).
+- **Test Fixtures & Scenarios**:
+  - `tests/fixtures/distributed-app/`: Multi-domain monorepo fixture (`apps/api` and `apps/web`).
+  - `tests/scenarios/distributed-architecture.md`: Progressive loading and sub-blueprint index tests.
+  - `tests/scenarios/cli-watcher.md`: CLI status, watcher PID, and debounce verification tests.
+
+---
+
 ## [1.1.0] - 2026-11-27
 
 ### Added

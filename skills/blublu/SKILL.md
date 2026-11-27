@@ -3,7 +3,7 @@ name: blublu
 description: Maintains a persistent, verified architectural blueprint of a software codebase. Use when analyzing, creating, modifying, debugging, refactoring, or documenting a project. Reads the existing blueprint before code-related work and updates it after architectural changes.
 license: MIT
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   author: "blublu"
 ---
 
@@ -35,6 +35,9 @@ metadata:
 
 7. **Token Efficiency**
    The blueprint is read on every subsequent agent run. Keep explanations dense, structured, and factual. Prefer tables, lists, and concise flow descriptors over verbose prose. Avoid dumping raw code snippets or trivial implementation details.
+
+8. **Context-Aware / Progressive Loading**
+   In distributed architecture repositories (`.agents/sub-blueprints/`), the agent MUST read the root index (`.agents/codebase-map.md`) first. The agent is strictly FORBIDDEN from loading all sub-blueprints into context simultaneously. Only read the specific `.agents/sub-blueprints/<domain>.md` corresponding to the domain touched by the prompt.
 
 ---
 

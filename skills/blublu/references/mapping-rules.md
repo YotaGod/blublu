@@ -145,8 +145,11 @@ When maintaining codebase blueprints for large repositories or multi-package mon
      ```markdown
      | `BillingApp` | `apps/billing` | Invoicing, subscription state machine, and payment callbacks | `SharedDb`, `SharedAuth` | [Verified] |
      ```
-3. **Sub-Blueprint Staging**:
-   For repositories with more than 50 independent microservices, link to domain-specific blueprints rather than indexing all files in root `.agents/codebase-map.md`.
+3. **Sub-Blueprint Staging & Progressive Loading**:
+   For repositories with more than 30–50 modules, use Codsblu v1.2.0 **Distributed Blueprints**:
+   - The root `.agents/codebase-map.md` serves strictly as the global index and architecture topology (Sections 1–4, 6, 8–15), with Section 5 maintaining high-level domain entries and the `Sub-Blueprints Index`.
+   - Granular submodules, domain flows, and domain tables are stored in `.agents/sub-blueprints/<domain>.md` conforming to [sub-blueprint-template.md](sub-blueprint-template.md).
+   - **Progressive Context Loading Rule**: Agents are strictly FORBIDDEN from reading all sub-blueprints at task start. Agents must read `.agents/codebase-map.md` first, resolve which domain is affected by the prompt, and selectively load *only* that domain's sub-blueprint into context.
 
 ---
 

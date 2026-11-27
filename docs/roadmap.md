@@ -8,8 +8,8 @@ This document outlines the strategic engineering roadmap for **Codsblu (blublu) 
 
 ```mermaid
 flowchart LR
-    v10["v1.0.0<br/>Core Memory & Spec<br/>(Released)"] --> v11["v1.1.0<br/>Intelligence & Validation<br/>(Current Milestone)"]
-    v11 --> v12["v1.2.0<br/>Monorepos & Badges<br/>(Planned)"]
+    v10["v1.0.0<br/>Core Memory & Spec<br/>(Released)"] --> v11["v1.1.0<br/>Intelligence & Validation<br/>(Released)"]
+    v11 --> v12["v1.2.0<br/>Distributed & Automation<br/>(Released)"]
     v12 --> v13["v1.3.0<br/>Sidecar & Webviews<br/>(Planned)"]
     v13 --> v20["v2.0.0<br/>Autonomous Evolution<br/>(Future Vision)"]
 ```

@@ -1,2 +1,22 @@
-# Auto detect text files and perform LF normalization
+# Normalize line endings: auto-detect text files, convert to LF in repo
 * text=auto
+
+# Force LF for shell scripts (must be LF on all platforms for POSIX compatibility)
+*.sh text eol=lf
+scripts/codsblu text eol=lf
+
+# Force CRLF for Windows-native batch/PowerShell files
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files — no line-ending conversion
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.wasm binary
+*.zip binary
+*.tar.gz binary
+*.pdf binary

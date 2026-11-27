@@ -156,3 +156,97 @@ As of version 1.0.0, the blublu architecture operates within three recognized co
 - **Constraint**: Section 6 structures dependency topologies via Mermaid (`graph TD`). While frontier models (Claude 3.5 Sonnet, Gemini 1.5 Pro, GPT-4o) reliably manipulate Mermaid graphs, smaller or distilled models with limited visual reasoning can produce syntax errors (such as unquoted node brackets or broken arrow syntax).
 - **Mitigation in v1.0**: blublu enforces strict Mermaid node quoting and connection guidelines in `mapping-rules.md`.
 
+---
+
+## 7. Distributed Blueprint Architecture (v1.2.0)
+
+Version 1.2.0 introduces a hierarchical multi-file blueprint system for large-scale projects to solve the monorepo token-budget problem described in Section 6A.
+
+### A. Architecture Overview
+
+```
+.agents/
+├── codebase-map.md              ← Root Index Blueprint (always read first)
+│   └── Section 5 contains:     ← Module Registry + Sub-Blueprints Index table
+│       ├── [primary modules]    ← Modules owned directly by root
+│       └── Sub-Blueprints Index ← Maps domains → sub-blueprint paths
+│
+└── sub-blueprints/
+    ├── api.md                   ← Domain Blueprint: API service
+    ├── web.md                   ← Domain Blueprint: Web frontend
+    └── auth.md                  ← Domain Blueprint: Auth & Identity
+```
+
+Each sub-blueprint uses a 7-section schema (derived from the root 15-section schema):
+1. Domain Identity & Scope
+2. Entry Points & Bootstrap
+3. Module Registry (domain-scoped)
+4. Dependency Mapping (domain-scoped Mermaid)
+5. API Contracts / Public Interface
+6. Data Flows & Integrations
+7. Recent Changes & Health
+
+### B. Context-Aware Loading Protocol
+
+The progressive loading rule is **mandatory** and must be followed by every agent consuming a distributed blueprint:
+
+```mermaid
+flowchart TD
+    A["Agent receives user prompt"] --> B["Read .agents/codebase-map.md (root index)"]
+    B --> C{"Is architecture\ndistributed?"}
+    C -- No --> D["Proceed with root blueprint only"]
+    C -- Yes --> E["Parse Sub-Blueprints Index in Section 5"]
+    E --> F["Identify domains touched by prompt"]
+    F --> G{"Multiple domains?"}
+    G -- No --> H["Load single matching sub-blueprint"]
+    G -- Yes --> I["Load only the matched sub-blueprints\n(NEVER load all at once)"]
+    H --> J["Execute task with focused context"]
+    I --> J
+```
+
+**Core constraint**: An agent **must never** pre-load all sub-blueprints speculatively. This would negate the token savings that distributed mode provides.
+
+### C. Orphaned Sub-Blueprint Detection
+
+The validator (`scripts/validate-blueprint.py`) enforces referential integrity in distributed mode:
+- **Registered but missing**: A path listed in the Sub-Blueprints Index that has no corresponding `.md` file on disk → `[ERR]` exit code 1.
+- **Orphaned file**: A `.md` file present in `.agents/sub-blueprints/` that is not registered in the root index → `[ERR]` exit code 1.
+- **Valid state**: Every registered domain has a matching file; every file in the directory is registered.
+
+### D. Single-File Backward Compatibility
+
+Distributed mode is strictly **opt-in**. Projects using v1.0 or v1.1 single-file blueprints require no migration and continue to function identically. The validator automatically detects the architecture mode from the root blueprint's Section 5 structure.
+
+| Project Type | Root Blueprint | Sub-Blueprints Dir | Mode Auto-Detected |
+|---|---|---|---|
+| Legacy / Small | `.agents/codebase-map.md` | Not present | Single-File |
+| Large / Distributed | `.agents/codebase-map.md` + Sub-Blueprints Index | `.agents/sub-blueprints/*.md` | Distributed |
+
+---
+
+## 8. Unified CLI Architecture (v1.2.0)
+
+### A. Component Map
+
+```
+scripts/
+├── codsblu.py      ← Core Python engine (init, status, validate, migrate, watch, stop)
+├── watcher.py      ← Standalone background watcher daemon (debounce, PID, event queue)
+├── scanner.py      ← Git/filesystem dual-mode change detector (from v1.1.0)
+├── validate-blueprint.py  ← Standalone validator (from v1.0.0, updated in v1.2.0)
+│
+├── codsblu         ← POSIX shell launcher (Linux/macOS)
+├── codsblu.ps1     ← PowerShell launcher (Windows)
+└── codsblu.cmd     ← CMD launcher (Windows legacy)
+```
+
+### B. Watcher Internals
+
+The watcher (`scripts/watcher.py`) operates as a background daemon:
+- Spawned via `codsblu watch`; PID written to `.agents/.codsblu.pid`.
+- Polls the project directory on a configurable interval (default: 3 seconds).
+- Uses debouncing (default: 500ms) to avoid flooding on rapid saves.
+- Writes accumulated events to `.agents/.pending-changes.json` atomically.
+- Terminated gracefully via `codsblu stop` (SIGTERM on POSIX, `taskkill` on Windows).
+- Respects the same ignore list as `scanner.py`: `node_modules/`, `vendor/`, `.git/`, `dist/`, `build/`, `coverage/`, `.next/`, `.cache/`, `__pycache__/`.
+

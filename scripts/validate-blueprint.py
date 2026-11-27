@@ -117,8 +117,11 @@ def parse_module_registry(body):
     """
     Parses Section 5 (Module Registry) Markdown table.
     Expected columns: Module, Path, Responsibility, Dependencies, Status.
+    Stops before any sub-heading (such as ### Sub-Blueprints Index).
     """
-    lines = [line.strip() for line in body.splitlines() if line.strip()]
+    # Isolate primary Module Registry table from any subsequent sub-tables
+    primary_part = body.split("###")[0]
+    lines = [line.strip() for line in primary_part.splitlines() if line.strip()]
     table_lines = [line for line in lines if line.startswith("|") and line.endswith("|")]
 
     if len(table_lines) < 2:
@@ -329,6 +332,73 @@ def check_staleness(project_root: Path, modules: list) -> list:
     return stale_modules
 
 
+def validate_sub_blueprints(project_root: Path, root_content: str, check_files: bool = False, strict: bool = False) -> dict:
+    """
+    Validates distributed architecture sub-blueprints (.agents/sub-blueprints/*.md).
+    Checks existence of registered sub-blueprints, syntax integrity, and flags orphaned files.
+    """
+    sub_dir = project_root / ".agents" / "sub-blueprints"
+    res = {
+        "is_distributed": False,
+        "registered": [],
+        "missing": [],
+        "orphaned": [],
+        "errors": [],
+        "warnings": [],
+    }
+
+    # Extract sub-blueprint table rows
+    idx_match = re.search(r"### Sub-Blueprints Index[^\n]*\n(.*?)(?=\n## |\Z)", root_content, re.DOTALL)
+    registered_files = set()
+
+    if idx_match:
+        res["is_distributed"] = True
+        t_lines = [l.strip() for l in idx_match.group(1).splitlines() if l.strip().startswith("|")]
+        if len(t_lines) >= 3:
+            for row in t_lines[2:]:
+                cols = [c.strip() for c in row.split("|")[1:-1]]
+                if len(cols) >= 2:
+                    dom_name = cols[0].strip("`'\" ")
+                    sub_rel = cols[1].strip("`'\" ")
+                    if not sub_rel or sub_rel == "N/A":
+                        continue
+
+                    sub_full = project_root / sub_rel
+                    registered_files.add(sub_full.resolve())
+                    res["registered"].append({
+                        "domain": dom_name,
+                        "path": sub_rel,
+                        "exists": sub_full.is_file(),
+                    })
+
+                    if not sub_full.is_file():
+                        res["missing"].append(sub_rel)
+                        res["errors"].append(f"Registered sub-blueprint '{sub_rel}' does not exist on disk.")
+                    else:
+                        # Validate sub-blueprint content
+                        try:
+                            sub_text = sub_full.read_text(encoding="utf-8")
+                            m_errs, _, _ = validate_mermaid_blocks(sub_text)
+                            if m_errs:
+                                res["errors"].extend([f"[{sub_rel}] {e}" for e in m_errs])
+                        except Exception as exc:
+                            res["errors"].append(f"Failed to read sub-blueprint '{sub_rel}': {exc}")
+
+    # Check for orphaned sub-blueprints on disk
+    if sub_dir.is_dir():
+        for md_file in sub_dir.glob("*.md"):
+            if md_file.resolve() not in registered_files:
+                rel_path = f".agents/sub-blueprints/{md_file.name}"
+                res["orphaned"].append(rel_path)
+                msg = f"Orphaned sub-blueprint '{rel_path}' exists on disk but is not indexed in root blueprint."
+                if strict:
+                    res["errors"].append(msg)
+                else:
+                    res["warnings"].append(msg)
+
+    return res
+
+
 def validate_blueprint(file_path, check_files=False, check_staleness_flag=False, strict=False):
     target = Path(file_path)
     result = {
@@ -459,6 +529,15 @@ def validate_blueprint(file_path, check_files=False, check_staleness_flag=False,
                             result["errors"].append(msg)
                         else:
                             result["warnings"].append(msg)
+
+            # 7. Distributed Architecture Sub-Blueprints Validation
+            sub_results = validate_sub_blueprints(project_root, content, check_files=check_files, strict=strict)
+            result["distributed_mode"] = sub_results["is_distributed"]
+            result["sub_blueprints"] = sub_results
+            if sub_results["errors"]:
+                result["errors"].extend(sub_results["errors"])
+            if sub_results["warnings"]:
+                result["warnings"].extend(sub_results["warnings"])
     else:
         result["errors"].append("Section 5 (Module Registry) is missing or unparseable.")
 
@@ -499,8 +578,9 @@ def main():
         print(json.dumps(res, indent=2))
     else:
         status_symbol = "✔ PASS" if res["valid"] else "✖ FAIL"
+        mode_str = "Distributed" if res.get("distributed_mode") else "Single-File"
         print("=" * 60)
-        print(f" Codsblu (blublu) Blueprint Validator v1.1.0 — {status_symbol}")
+        print(f" Codsblu (blublu) Blueprint Validator v1.2.0 — {status_symbol} ({mode_str})")
         print("=" * 60)
         print(f"File:               {res['file']}")
         print(f"Total Modules:      {res['metrics']['total_modules']}")
@@ -509,6 +589,9 @@ def main():
         print(f"  - Inferred:       {res['metrics']['inferred']}")
         print(f"  - Unverified:     {res['metrics']['unverified']}")
         print(f"  - Stale:          {res['metrics']['stale']}")
+        if res.get("distributed_mode"):
+            sub_info = res["sub_blueprints"]
+            print(f"Sub-Blueprints:     {len(sub_info['registered'])} registered, {len(sub_info['missing'])} missing, {len(sub_info['orphaned'])} orphaned")
         print("-" * 60)
 
         if res["warnings"]:
