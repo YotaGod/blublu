@@ -1,0 +1,5 @@
+[project]
+name = "non-git-app"
+version = "0.1.0"
+description = "Sample non-git CLI project for testing Codsblu filesystem fallback scanner"
+dependencies = []

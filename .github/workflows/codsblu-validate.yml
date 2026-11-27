@@ -1,0 +1,39 @@
+name: Codsblu Blueprint Validation
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-blueprint:
+    name: Validate Architectural Blueprint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate Blueprint Integrity
+        run: |
+          if [ -f ".agents/codebase-map.md" ]; then
+            python scripts/validate-blueprint.py --strict --check-files --format text
+          else
+            echo "::notice::No root .agents/codebase-map.md detected. Skipping blueprint validation."
+          fi
+
+      - name: Validate Fixture Blueprints
+        run: |
+          echo "Validating sample fixtures..."
+          python scripts/validate-blueprint.py --path tests/fixtures/simple-node-app/.agents/codebase-map.md --strict --check-files
+          python scripts/validate-blueprint.py --path tests/fixtures/laravel-app/.agents/codebase-map.md --strict --check-files
+          python scripts/validate-blueprint.py --path tests/fixtures/react-app/.agents/codebase-map.md --strict --check-files

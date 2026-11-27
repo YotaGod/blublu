@@ -1,0 +1,27 @@
+{
+  "pyproject.toml": {
+    "mtime": 1795746071.4451008,
+    "size": 158,
+    "hash": "61b53b0ea9ef01e69551a554e993a75d8cf82f1d28485c68e273a6dd3aa59e82"
+  },
+  ".agents/codebase-map.md": {
+    "mtime": 1795746071.6970465,
+    "size": 2628,
+    "hash": "9c865c7b41af9252e802d547a36a7534336d514daa9d6c563df672fc0859d16d"
+  },
+  "src/helper.py": {
+    "mtime": 1795746159.5939004,
+    "size": 29,
+    "hash": "ecde2eaa6d041986cd9f0c7c2b7e46ae9ab8a08faa277807b7c8024387931e39"
+  },
+  "src/main.py": {
+    "mtime": 1795746071.5367284,
+    "size": 254,
+    "hash": "6adf8ede550083bfde846a606d9eb611414784a32aa76d21874527aea6c21ff1"
+  },
+  "src/parser.py": {
+    "mtime": 1795746071.6179533,
+    "size": 135,
+    "hash": "a15b6f5c5d1c8f27a8cda0d2d3836faf77dd652055ed282c117956b3966b6f0f"
+  }
+}

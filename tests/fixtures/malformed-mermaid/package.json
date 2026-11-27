@@ -1,0 +1,5 @@
+{
+  "name": "malformed-mermaid-fixture",
+  "version": "1.0.0",
+  "description": "Test fixture containing broken Mermaid syntax for testing v1.1.0 validator"
+}

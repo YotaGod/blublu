@@ -1,0 +1,56 @@
+name: Codsblu Architecture Drift Check
+
+on:
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-architecture-drift:
+    name: Check Architecture Drift
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Detect Architectural Modifications vs Blueprint
+        run: |
+          BASE_REF="origin/${{ github.base_ref }}"
+          CHANGED_FILES=$(git diff --name-only "$BASE_REF"...HEAD || git diff --name-only HEAD~1)
+          echo "Changed files in PR:"
+          echo "$CHANGED_FILES"
+
+          CODE_CHANGED=false
+          BLUEPRINT_CHANGED=false
+
+          while IFS= read -r file; do
+            if [[ "$file" =~ ^(src|app|packages|lib|routes|database|api|pkg|cmd|internal)/ ]]; then
+              CODE_CHANGED=true
+            fi
+            if [[ "$file" == *".agents/codebase-map.md"* ]]; then
+              BLUEPRINT_CHANGED=true
+            fi
+          done <<< "$CHANGED_FILES"
+
+          if [ "$CODE_CHANGED" = true ] && [ "$BLUEPRINT_CHANGED" = false ]; then
+            echo "::warning title=Architecture Drift Detected::Source code files were modified without synchronizing '.agents/codebase-map.md'. Run 'blublu update' or sync your architectural blueprint."
+          else
+            echo "Architecture blueprint is in sync with source changes."
+          fi
+
+      - name: Run Staleness Check on Blueprint
+        run: |
+          if [ -f ".agents/codebase-map.md" ]; then
+            python scripts/validate-blueprint.py --check-staleness
+          fi
