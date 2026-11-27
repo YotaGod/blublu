@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2026-11-27
+
+### Added
+- **Hierarchical Architecture Mapping (Levels 1–4)**: L1 global (codebase-map.md, ≤700 tokens), L2 domain (sub-blueprints/\<domain\>.md), L3 module (sub-blueprints/\<domain\>/\<module\>.md), L4 appended to L3.
+- **Enterprise Monorepo Support**: `tests/fixtures/enterprise-monorepo/` fixture (15 services, 10 domains, L1+L2+L3 blueprints).
+- **Advanced Cross-Service Dependency Analysis**: Confirmed/Inferred/Unverified confidence labels, standard dependency table format, circular dependency detection, `update-rules.md` Section 6.
+- **Architecture Drift Detection Engine**: `--check-drift` (4 categories), `--drift-exceptions`, `--validate-graph` flags in `validate-blueprint.py`; non-destructive read-only.
+- **CLI Enhancements (v2.0.0)**: `codsblu drift`, `codsblu analyze <module>`, `codsblu dependencies [--module] [--format]`, `codsblu watch --scope <domain>`.
+- **Stable Watcher**: Graceful restart on filesystem errors (max 10 consecutive), `.agents/` excluded from watch scope, `--scope` domain filter, `--validate-interval` option.
+- **Machine-Readable Architecture Graph (`graph_export.py`)**: JSON/YAML export, `--validate-graph`, `--include-sub-blueprints`, circular dependency detection in metadata.
+- **Multi-Agent Integration**: AGENTS.md and CLAUDE.md bootstrap blocks updated with L1–L4 protocol; SKILL.md v2.0.0 with Principle 8 (Hierarchical Loading) and Principle 9 (Evidence-Based Dependencies).
+- **Test Suite v2.0.0**: `tests/scenarios/enterprise-monorepo.md`, `drift-detection.md`, `dependency-analysis.md`, `graph-export.md`.
+
+### Changed
+- `mapping-rules.md`: Added Sections 2 (Hierarchical Mapping L1–L4) and 4 (Agent Navigation Protocol).
+- `update-rules.md`: Added Section 6 (Cross-Service Dependency Analysis Protocol).
+- `validate-blueprint.py`: v2.0.0 — added `--check-drift`, `--drift-exceptions`, `--validate-graph` args.
+- `codsblu.py`: v2.0.0 — added `drift`, `analyze`, `dependencies` commands and `watch --scope`.
+- `watcher.py`: v2.0.0 — graceful restart, `.agents/` exclusion, scope filtering.
+- `SKILL.md`: v2.0.0 — Principle 8 updated, Principle 9 added.
+- `AGENTS.md`, `CLAUDE.md`: Updated bootstrap blocks with hierarchical loading protocol.
+
+---
+
 ## [1.2.0] - 2026-11-27
 
 ### Added

@@ -133,3 +133,76 @@ If the codebase is not tracked by Git, or if the `git` CLI is unavailable:
 3. **Inspect File Modification Timestamps**:
    - Look for files whose last-modified timestamp is newer than the `Last Updated` timestamp in Section 15.
    - Analyze those modified files for architectural changes.
+
+
+---
+
+## 6. Cross-Service Dependency Analysis Protocol (v2.0.0)
+
+This section defines how AI agents must identify, label, and record dependencies between services, modules, and external systems in distributed architecture blueprints.
+
+### A. Evidence-Based Dependency Discovery
+
+Dependencies MUST only be recorded when backed by one of the following evidence types:
+
+| Evidence Type | Description | Examples |
+| :--- | :--- | :--- |
+| **Direct Import / Require** | Static import or require statement in source code | `import { AuthService } from '@monorepo/auth'`, `require('./billing')` |
+| **HTTP Client Call** | Outbound HTTP/HTTPS/gRPC call to another service's known endpoint | `axios.get('http://payment-service/api/charge')`, `fetch(BILLING_URL)` |
+| **Event Bus Subscription** | Service subscribes to or publishes events from another service's known topic | `queue.subscribe('order.created')`, `kafka.publish('inventory.deducted')` |
+| **Shared Database Schema** | Two services read/write to the same database table or schema | Both services reference `users` table, shared PostgreSQL schema `billing` |
+| **Shared Library Import** | Both services import from the same internal shared library | `import { config } from '@monorepo/shared-config'` |
+| **Environment Variable Reference** | Service consumes an env var documented as owned by another service | `process.env.AUTH_SERVICE_URL`, `PAYMENT_API_KEY` |
+
+### B. Dependency Confidence Labels
+
+Every cross-service dependency entry in a blueprint MUST carry one of these confidence labels:
+
+| Label | Meaning | When to Assign |
+| :--- | :--- | :--- |
+| `Confirmed` | Direct evidence found in source code (import, HTTP call, event subscription, shared schema). | Agent directly read the source file containing the dependency and verified it. |
+| `Inferred` | Dependency is strongly implied by naming conventions, architecture patterns, or manifest configurations, but not directly read from code. | Architecture pattern suggests it, but no source file inspection occurred. |
+| `Unverified` | Dependency was mentioned in legacy documentation, comments, or ADRs but has not been inspected against current source. | Found in README, architecture diagram, or comment, but no code inspection performed. |
+
+### C. Standard Dependency Table Format
+
+All cross-service dependencies MUST be recorded using this Markdown table format in the blueprint's Section 6 (or domain sub-blueprint's dependency section):
+
+```markdown
+| Source | Target | Type | Label | Evidence | Confidence |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `OrderService` | `InventoryService` | `api` | `deduct-stock` | `services/order/client.ts:42` | Confirmed |
+| `APIGateway` | `AuthService` | `api` | `validate-token` | `gateway/middleware/auth.js:15` | Confirmed |
+| `BillingService` | `NotificationService` | `event` | `invoice.created` | Architecture pattern | Inferred |
+| `LegacyReporter` | `UserService` | `db-shared` | `users table` | `docs/legacy-arch.md` | Unverified |
+```
+
+**Column definitions**:
+- **Source**: Module ID or service name (must match Module Registry entry).
+- **Target**: Target module ID or service name (must match Module Registry entry).
+- **Type**: One of: `import` | `api` | `event` | `db-shared` | `lib`.
+- **Label**: Brief human-readable description of the dependency purpose.
+- **Evidence**: File path and line number, or rationale if `Inferred`/`Unverified`.
+- **Confidence**: `Confirmed` | `Inferred` | `Unverified`.
+
+### D. Circular Dependency Detection & Reporting
+
+If a dependency chain forms a cycle (A → B → ... → A), agents MUST:
+
+1. **Detect** the cycle by tracing the full dependency path.
+2. **Flag** every node in the cycle in the blueprint with:
+   ```
+   [CIRCULAR DEPENDENCY - REVIEW REQUIRED]
+   ```
+3. **Report** the full cycle path in Section 14 (Recent Architectural Changes):
+   ```
+   YYYY-MM-DD: [CIRCULAR DEPENDENCY DETECTED] OrderService → InventoryService → ShippingService → OrderService. Review and refactor to break cycle.
+   ```
+4. **Never silently resolve** the circular dependency by omitting one of the edges.
+
+### E. Strict Prohibitions
+
+- **FORBIDDEN**: Recording a dependency solely because two modules share similar names.
+- **FORBIDDEN**: Upgrading a dependency label from `Unverified` to `Confirmed` without directly reading the source file.
+- **FORBIDDEN**: Creating dependency entries based on speculation about what "should" exist.
+- **REQUIRED**: Every `Confirmed` entry must cite a specific file path and line number as evidence.

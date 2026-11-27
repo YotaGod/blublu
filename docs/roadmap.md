@@ -10,8 +10,7 @@ This document outlines the strategic engineering roadmap for **Codsblu (blublu) 
 flowchart LR
     v10["v1.0.0<br/>Core Memory & Spec<br/>(Released)"] --> v11["v1.1.0<br/>Intelligence & Validation<br/>(Released)"]
     v11 --> v12["v1.2.0<br/>Distributed & Automation<br/>(Released)"]
-    v12 --> v13["v1.3.0<br/>Sidecar & Webviews<br/>(Planned)"]
-    v13 --> v20["v2.0.0<br/>Autonomous Evolution<br/>(Future Vision)"]
+    v12 --> v20["v2.0.0<br/>Advanced Architecture Intelligence<br/>(Released)"]
 ```
 
 ---
@@ -73,11 +72,22 @@ flowchart LR
 
 ---
 
-### 🔮 v2.0.0 — Autonomous Architectural Evolution (Future Vision)
-*Self-synthesizing architectural memory and predictive refactoring.*
-- **Semantic Code Graph Engine**:
-  - Language server protocol (LSP) integration for AST-level call-graph mapping.
-- **Multi-Agent Swarm Architectural Arbitration**:
-  - Automated merge-conflict resolution for architectural blueprints across concurrent agent swarms.
-- **Automated Refactoring Impact Simulator**:
-  - Predicts cross-boundary breakage before writing code.
+### ✅ v2.0.0 — Advanced Architecture Intelligence (Released — 2026-11-27)
+*Enterprise-grade hierarchical architecture memory, drift detection, and machine-readable graph export.*
+- **Hierarchical Architecture Mapping (Levels 1–4)**: L1 global (codebase-map.md, ≤700 tokens), L2 domain, L3 module, L4 detail (optional).
+- **Enterprise Monorepo Support**: Full fixture with 15 services, 10 domains, L1+L2+L3 blueprints.
+- **Architecture Drift Detection Engine**: `--check-drift` (4 categories), `--drift-exceptions`, `--validate-graph`; non-destructive read-only.
+- **Cross-Service Dependency Analysis**: Confidence labels (Confirmed/Inferred/Unverified), circular dependency detection.
+- **Machine-Readable Graph Exporter** (`graph_export.py`): JSON/YAML export, schema validation, circular dep metadata.
+- **CLI v2.0.0**: `codsblu drift`, `codsblu analyze <module>`, `codsblu dependencies [--module] [--format]`, `codsblu watch --scope`.
+- **Stable Watcher**: Graceful restart on filesystem errors, `.agents/` exclusion, scope filtering.
+- **Multi-Agent Integration**: AGENTS.md/CLAUDE.md L1–L4 bootstrap protocol; SKILL.md v2.0.0 (Principles 8–9).
+
+---
+
+### 🔮 Future Considerations
+*Not scheduled — ideas for community feedback.*
+- **v2.1.0**: IDE Integration (VS Code extension, inline blueprint viewer).
+- **v2.2.0**: Graph Database Backend (Neo4j/DGraph adapter for large enterprise graphs).
+- **v2.3.0**: AI-Assisted Drift Resolution (suggested blueprint patch generation).
+- **v3.0.0**: Real-Time Collaborative Architecture (multi-agent concurrent blueprint editing).

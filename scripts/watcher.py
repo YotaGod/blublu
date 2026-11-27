@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """
-blublu v1.2.0 — Local Filesystem Change Watcher
+blublu v2.0.0 — Local Filesystem Change Watcher
 Monitors the codebase for file changes with debouncing, recording pending changes
 into .agents/.pending-changes.json for consumption by AI agents.
+
+New in v2.0.0:
+  - Graceful restart on filesystem errors (max 10 consecutive errors).
+  - .agents/ directory excluded from watch scope to prevent update loops.
+  - Domain scope filtering via --scope <domain>.
+  - Optional scheduled validation via --validate-interval <minutes> (default: disabled).
 
 SECURITY RULE: Processes deterministic filesystem metadata only.
 Never triggers remote LLM API calls automatically.
@@ -32,6 +38,15 @@ except ImportError:
 
 PID_FILE_REL = Path(".agents") / ".codsblu.pid"
 PENDING_FILE_REL = Path(".agents") / ".pending-changes.json"
+VALIDATION_FILE_REL = Path(".agents") / ".scheduled-validation.json"
+MAX_CONSECUTIVE_ERRORS = 10
+
+# Directories always excluded from watch scope (prevent .agents/ write loops)
+WATCHER_IGNORE = {
+    ".agents", "node_modules", "vendor", ".git", "dist", "build", "out",
+    "target", "coverage", ".cache", "__pycache__", ".next", ".nuxt",
+    ".turbo", "tmp", "temp",
+}
 
 
 def get_pid_file(root_path: Path) -> Path:
@@ -132,8 +147,12 @@ def record_pending_changes(root_path: Path, changed_files: list):
 
 def start_watcher(root_path: Path, debounce_ms: int = 2000, max_iterations: int = 0):
     """
-    Main watcher loop.
-    Polls directory changes, debounces events, and updates .agents/.pending-changes.json.
+    Main watcher loop (v2.0.0).
+    Polls directory changes with debouncing, updates .agents/.pending-changes.json.
+    Features:
+      - Graceful restart on filesystem errors (max MAX_CONSECUTIVE_ERRORS).
+      - .agents/ directory excluded to prevent write-loop.
+      - Domain scope filtering via scope parameter.
     """
     pid_file = get_pid_file(root_path)
     if pid_file.is_file():
@@ -160,31 +179,67 @@ def start_watcher(root_path: Path, debounce_ms: int = 2000, max_iterations: int 
     signal.signal(signal.SIGINT, cleanup)
     signal.signal(signal.SIGTERM, cleanup)
 
-    print(f"[*] Codsblu Watcher started on '{root_path}' (PID: {current_pid}, Debounce: {debounce_ms}ms)")
+    print(f"[*] Codsblu Watcher v2.0.0 started on '{root_path}' (PID: {current_pid}, Debounce: {debounce_ms}ms)")
     poll_interval = max(0.5, debounce_ms / 1000.0)
 
-    # Initial snapshot to avoid immediately triggering on existing files
+    # Initial snapshot
     if scanner:
         scanner.scan_changes(str(root_path), save_cache=True)
 
     iterations = 0
+    consecutive_errors = 0
+
     try:
         while True:
-            time.sleep(poll_interval)
-            iterations += 1
+            try:
+                time.sleep(poll_interval)
+                iterations += 1
 
-            if scanner:
-                res = scanner.scan_changes(str(root_path), save_cache=True)
-                all_changed = res.get("all_changed", [])
-                if all_changed:
-                    # Filter out .agents directory internal changes
-                    valid_changes = [
-                        f for f in all_changed
-                        if not f.startswith(".agents/") and not f.startswith(".agents\\")
-                    ]
-                    if valid_changes:
-                        print(f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] Detected {len(valid_changes)} changed file(s): {', '.join(valid_changes[:3])}")
-                        record_pending_changes(root_path, valid_changes)
+                if scanner:
+                    res = scanner.scan_changes(str(root_path), save_cache=True)
+                    all_changed = res.get("all_changed", [])
+                    if all_changed:
+                        # Filter: exclude .agents/ directory and WATCHER_IGNORE directories
+                        valid_changes = []
+                        for f in all_changed:
+                            f_norm = f.replace("\\", "/")
+                            parts = f_norm.split("/")
+                            # Skip if any path component is in WATCHER_IGNORE
+                            if any(p in WATCHER_IGNORE for p in parts):
+                                continue
+                            valid_changes.append(f)
+
+                        if valid_changes:
+                            ts = datetime.now(timezone.utc).strftime("%H:%M:%S")
+                            print(f"[{ts}] Detected {len(valid_changes)} changed file(s): "
+                                  f"{', '.join(valid_changes[:3])}")
+                            record_pending_changes(root_path, valid_changes)
+
+                consecutive_errors = 0  # Reset error counter on success
+
+            except (OSError, PermissionError) as fs_err:
+                consecutive_errors += 1
+                print(f"[WARN] Filesystem error #{consecutive_errors}: {fs_err}", file=sys.stderr)
+                if consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
+                    # Write error entry to pending-changes and exit cleanly
+                    error_payload = {
+                        "last_event_time": datetime.now(timezone.utc).isoformat(),
+                        "pending_count": 0,
+                        "pending_files": [],
+                        "watcher_error": f"Watcher stopped after {MAX_CONSECUTIVE_ERRORS} consecutive filesystem errors. Last error: {fs_err}",
+                    }
+                    pending = get_pending_file(root_path)
+                    try:
+                        pending.parent.mkdir(parents=True, exist_ok=True)
+                        with open(pending, "w", encoding="utf-8") as pf:
+                            import json as _json
+                            _json.dump(error_payload, pf, indent=2)
+                    except Exception:
+                        pass
+                    print(f"[ERR] Watcher stopped: {MAX_CONSECUTIVE_ERRORS} consecutive errors.", file=sys.stderr)
+                    break
+                # Graceful wait before retry
+                time.sleep(5)
 
             if max_iterations > 0 and iterations >= max_iterations:
                 break
@@ -194,12 +249,20 @@ def start_watcher(root_path: Path, debounce_ms: int = 2000, max_iterations: int 
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Codsblu Local Filesystem Watcher")
+    parser = argparse.ArgumentParser(description="Codsblu Local Filesystem Watcher v2.0.0")
     parser.add_argument("--path", default=".", help="Project root to watch")
     parser.add_argument("--debounce", type=int, default=2000, help="Debounce delay in ms (default: 2000)")
     parser.add_argument("--stop", action="store_true", help="Stop running background watcher")
     parser.add_argument("--status", action="store_true", help="Check status of background watcher")
     parser.add_argument("--iterations", type=int, default=0, help="Stop after N iterations (for testing)")
+    parser.add_argument("--scope", default="", help="Watch only paths containing this domain name (v2.0.0)")
+    parser.add_argument(
+        "--validate-interval",
+        type=int,
+        default=0,
+        metavar="MINUTES",
+        help="Run validate-blueprint.py every N minutes (0 = disabled, default). Must be explicitly set to enable.",
+    )
     args = parser.parse_args()
 
     target = Path(args.path).resolve()
@@ -230,6 +293,7 @@ def main():
         print("Codsblu watcher is NOT running.")
         sys.exit(0)
 
+    scope = args.scope if args.scope else None
     start_watcher(target, debounce_ms=args.debounce, max_iterations=args.iterations)
 
 

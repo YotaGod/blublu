@@ -3,7 +3,7 @@ name: blublu
 description: Maintains a persistent, verified architectural blueprint of a software codebase. Use when analyzing, creating, modifying, debugging, refactoring, or documenting a project. Reads the existing blueprint before code-related work and updates it after architectural changes.
 license: MIT
 metadata:
-  version: "1.2.0"
+  version: "2.0.0"
   author: "blublu"
 ---
 
@@ -36,8 +36,16 @@ metadata:
 7. **Token Efficiency**
    The blueprint is read on every subsequent agent run. Keep explanations dense, structured, and factual. Prefer tables, lists, and concise flow descriptors over verbose prose. Avoid dumping raw code snippets or trivial implementation details.
 
-8. **Context-Aware / Progressive Loading**
-   In distributed architecture repositories (`.agents/sub-blueprints/`), the agent MUST read the root index (`.agents/codebase-map.md`) first. The agent is strictly FORBIDDEN from loading all sub-blueprints into context simultaneously. Only read the specific `.agents/sub-blueprints/<domain>.md` corresponding to the domain touched by the prompt.
+8. **Hierarchical Context-Aware Loading (v2.0.0)**
+   blublu v2.0.0 uses a four-level hierarchical architecture. Agents MUST follow this loading sequence:
+   - **Level 1** (`.agents/codebase-map.md`): ALWAYS read first. Contains global architecture, domain index, tech stack. Keep content concise — target 500–700 tokens.
+   - **Level 2** (`.agents/sub-blueprints/<domain>.md`): Load ONLY the domain touched by the current prompt. Never load all domains simultaneously.
+   - **Level 3** (`.agents/sub-blueprints/<domain>/<module>.md`): Load ONLY when making interface-level or contract-breaking changes to a specific module.
+   - **Level 4** (Section appended to Level 3 file): Load ONLY when user explicitly asks for implementation details.
+   **Rule**: Load the minimum sufficient level. Each additional level = additional tokens consumed for the entire session.
+
+9. **Evidence-Based Dependency Recording**
+   Cross-service dependencies MUST be recorded with a Confidence label: `Confirmed` (source code evidence with file:line citation), `Inferred` (architecture pattern, no code inspection), or `Unverified` (mentioned in docs, unverified). Never record a dependency without evidence. If a circular dependency is detected (A → B → A), flag it as `[CIRCULAR DEPENDENCY - REVIEW REQUIRED]` and report it in Section 14.
 
 ---
 

@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """
-blublu v1.1.0 — Architectural Blueprint Validator
-Validates the structural integrity, section coverage, module registry consistency,
-Mermaid diagram syntax, filesystem references, and staleness/drift detection.
+blublu v2.0.0 — Architectural Blueprint Validator
+Validates structural integrity, section coverage, module registry consistency,
+Mermaid diagram syntax, filesystem references, staleness detection, and
+architecture drift classification (Confirmed / Potential / Unverified / User-Approved).
+
+New in v2.0.0:
+  --check-drift       : Classify per-module architecture drift (4 categories)
+  --drift-exceptions  : Comma-separated modules exempt from drift reporting
+  --validate-graph    : Validate a graph_export.py JSON output file
 
 Dependencies: Pure Python 3 standard library (no pip packages required).
 """
@@ -86,6 +92,22 @@ def parse_args():
         "--strict",
         action="store_true",
         help="Fail on any missing optional sections, unverified statuses, stale modules, or invalid Mermaid syntax",
+    )
+    parser.add_argument(
+        "--check-drift",
+        action="store_true",
+        help="Classify architecture drift per module: Confirmed / Potential / Unverified / User-Approved Exception",
+    )
+    parser.add_argument(
+        "--drift-exceptions",
+        default="",
+        help="Comma-separated module names marked as user-approved drift exceptions",
+    )
+    parser.add_argument(
+        "--validate-graph",
+        default="",
+        metavar="FILE",
+        help="Validate a graph_export.py JSON output file for blublu v2.0.0 schema compliance",
     )
     return parser.parse_args()
 
@@ -561,12 +583,341 @@ def validate_blueprint(file_path, check_files=False, check_staleness_flag=False,
                 else:
                     result["warnings"].append(diff_msg)
 
+    result["module_registry"] = modules
     result["valid"] = len(result["errors"]) == 0
     return result
 
 
+# ---------------------------------------------------------------------------
+# v2.0.0: Architecture Drift Detection Engine
+# ---------------------------------------------------------------------------
+
+def _get_changed_files_since(root: Path, since_date: str) -> list:
+    """
+    Returns list of files changed since since_date.
+    Uses git diff if available, falls back to filesystem mtime comparison.
+    """
+    changed = []
+    # Try git first
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["git", "log", f"--since={since_date}", "--name-only", "--pretty=format:", "HEAD"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0:
+            for line in result.stdout.splitlines():
+                line = line.strip()
+                if line:
+                    changed.append(line)
+            return list(set(changed))
+    except Exception:
+        pass
+
+    # Fallback: filesystem mtime comparison
+    try:
+        import datetime as dt_mod
+        try:
+            since_dt = dt_mod.datetime.fromisoformat(since_date.replace("Z", "+00:00"))
+        except Exception:
+            # Try YYYY-MM-DD format
+            since_dt = dt_mod.datetime.strptime(since_date[:10], "%Y-%m-%d").replace(
+                tzinfo=dt_mod.timezone.utc
+            )
+        since_ts = since_dt.timestamp()
+
+        IGNORE_DIRS = {
+            "node_modules", "vendor", ".git", "dist", "build", "out",
+            "target", "coverage", ".cache", "__pycache__", ".agents",
+        }
+        for item in root.rglob("*"):
+            if item.is_file():
+                # Check if any parent dir is in ignore list
+                parts = set(item.relative_to(root).parts)
+                if parts & IGNORE_DIRS:
+                    continue
+                try:
+                    if item.stat().st_mtime > since_ts:
+                        changed.append(str(item.relative_to(root)))
+                except OSError:
+                    pass
+    except Exception:
+        pass
+
+    return changed
+
+
+def _has_structural_change(file_path: Path) -> bool:
+    """
+    Heuristic: check if a source file contains structural keywords
+    that indicate architectural (interface/contract) changes.
+    """
+    STRUCTURAL_KEYWORDS = [
+        "export ", "exports.", "module.exports", "export default",
+        "export class", "export function", "export const",
+        "def ", "class ", "async def ",  # Python
+        "public ", "interface ", "abstract ",  # Java/C#/TS
+        "func ", "type ",  # Go
+        "CREATE TABLE", "ALTER TABLE", "DROP TABLE",  # SQL
+        "@app.route", "@router.", "app.get(", "app.post(",  # Routes
+        "addEventListener", "emit(", "on(",  # Events
+    ]
+    if not file_path.is_file():
+        return False
+    try:
+        content = file_path.read_text(encoding="utf-8", errors="replace")
+        for kw in STRUCTURAL_KEYWORDS:
+            if kw in content:
+                return True
+    except Exception:
+        pass
+    return False
+
+
+def check_drift(blueprint_path: str, module_registry: list, drift_exceptions_str: str) -> dict:
+    """
+    Classify architecture drift for each registered module.
+
+    Categories:
+      - Confirmed Drift: Module source files changed AND structural keywords detected.
+      - Potential Drift: Module source files changed but no structural keywords.
+      - Unverified: Module status is [Unverified] or [Stale] in registry.
+      - User-Approved Exception: Module name in drift_exceptions_str.
+
+    SAFETY: This function is READ-ONLY. It never modifies any blueprint file.
+    """
+    bp = Path(blueprint_path)
+    if not bp.is_file():
+        return {"drift_report": [], "summary": {
+            "confirmed": 0, "potential": 0, "unverified": 0, "approved_exceptions": 0
+        }}
+
+    # Determine project root
+    if bp.parent.name == ".agents":
+        root = bp.parent.parent
+    else:
+        root = bp.parent
+
+    # Read last_updated from Section 15
+    content = bp.read_text(encoding="utf-8")
+    health_match = re.search(
+        r"##\s+15\.[^\n]*\n(.*?)(?=\n##|\Z)", content, re.DOTALL
+    )
+    last_updated = ""
+    if health_match:
+        lu_match = re.search(r"\*\*Last Updated\*\*[:\s]+([^\n]+)", health_match.group(1))
+        if lu_match:
+            last_updated = lu_match.group(1).strip()
+
+    # Get changed files since last_updated
+    changed_files = []
+    if last_updated:
+        changed_files = _get_changed_files_since(root, last_updated)
+
+    changed_set = set(changed_files)
+    exceptions = {m.strip().lower() for m in drift_exceptions_str.split(",") if m.strip()}
+
+    drift_report = []
+    summary = {"confirmed": 0, "potential": 0, "unverified": 0, "approved_exceptions": 0}
+
+    for module in module_registry:
+        mod_name = module.get("name", "")
+        mod_path = module.get("path", "")
+        mod_status = module.get("status", "")
+        mod_name_lower = mod_name.lower()
+
+        # Category: User-Approved Exception
+        if mod_name_lower in exceptions:
+            drift_report.append({
+                "module": mod_name,
+                "path": mod_path,
+                "category": "User-Approved Exception",
+                "changed_files": [],
+                "recommendation": "No action required — explicitly approved by user.",
+            })
+            summary["approved_exceptions"] += 1
+            continue
+
+        # Category: Unverified (never verified against source)
+        if mod_status in ("[Unverified]", "Unverified", "[Stale]", "Stale"):
+            drift_report.append({
+                "module": mod_name,
+                "path": mod_path,
+                "category": "Unverified",
+                "changed_files": [],
+                "recommendation": f"Inspect source at '{mod_path}' and elevate status to [Verified].",
+            })
+            summary["unverified"] += 1
+            continue
+
+        # Find changed files matching this module's path prefix
+        mod_path_norm = mod_path.lstrip("./").replace("\\", "/")
+        module_changed = [
+            f for f in changed_set
+            if f.replace("\\", "/").startswith(mod_path_norm) or mod_path_norm in f.replace("\\", "/")
+        ]
+
+        if not module_changed:
+            # No drift detected for this module
+            continue
+
+        # Check for structural changes in changed files
+        has_structural = False
+        for rel_path in module_changed:
+            abs_path = root / rel_path
+            if _has_structural_change(abs_path):
+                has_structural = True
+                break
+
+        if has_structural:
+            drift_report.append({
+                "module": mod_name,
+                "path": mod_path,
+                "category": "Confirmed Drift",
+                "changed_files": module_changed[:5],
+                "recommendation": f"Update blueprint for '{mod_name}' — structural/interface changes detected. Run: blublu update",
+            })
+            summary["confirmed"] += 1
+        else:
+            drift_report.append({
+                "module": mod_name,
+                "path": mod_path,
+                "category": "Potential Drift",
+                "changed_files": module_changed[:5],
+                "recommendation": f"Review changes in '{mod_name}' — file changes detected but may be internal-only. Inspect and confirm.",
+            })
+            summary["potential"] += 1
+
+    return {"drift_report": drift_report, "summary": summary}
+
+
+def validate_graph_file(graph_file_path: str) -> dict:
+    """
+    Validate a graph_export.py JSON output file for blublu v2.0.0 schema compliance.
+    Returns dict with keys: valid (bool), errors (list), warnings (list).
+    """
+    errors = []
+    warnings = []
+    p = Path(graph_file_path)
+
+    if not p.is_file():
+        return {"valid": False, "errors": [f"File not found: {graph_file_path}"], "warnings": []}
+
+    try:
+        with open(p, encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        return {"valid": False, "errors": [f"Invalid JSON: {e}"], "warnings": []}
+    except Exception as e:
+        return {"valid": False, "errors": [f"Cannot read file: {e}"], "warnings": []}
+
+    if "version" not in data:
+        errors.append("Missing required field: 'version'")
+    elif data["version"] != "2.0.0":
+        warnings.append(f"Version is '{data['version']}', expected '2.0.0'")
+
+    if "project" not in data:
+        errors.append("Missing required field: 'project'")
+
+    node_ids = set()
+    if "nodes" not in data:
+        errors.append("Missing required field: 'nodes'")
+    elif not isinstance(data["nodes"], list):
+        errors.append("'nodes' must be an array")
+    else:
+        required_node_fields = {"id", "name", "path", "type", "status"}
+        for i, node in enumerate(data["nodes"]):
+            missing = required_node_fields - set(node.keys())
+            if missing:
+                errors.append(f"Node[{i}] missing fields: {', '.join(sorted(missing))}")
+            else:
+                node_ids.add(node["id"])
+
+    if "edges" in data and isinstance(data["edges"], list):
+        required_edge_fields = {"source", "target", "type", "confidence"}
+        for i, edge in enumerate(data["edges"]):
+            missing = required_edge_fields - set(edge.keys())
+            if missing:
+                errors.append(f"Edge[{i}] missing fields: {', '.join(sorted(missing))}")
+            else:
+                if edge["source"] not in node_ids:
+                    errors.append(f"Edge[{i}] source '{edge['source']}' references unknown node")
+                if edge["target"] not in node_ids:
+                    errors.append(f"Edge[{i}] target '{edge['target']}' references unknown node")
+
+    if "metadata" not in data:
+        warnings.append("Missing optional field: 'metadata'")
+
+    return {"valid": len(errors) == 0, "errors": errors, "warnings": warnings}
+
+
+def _print_drift_report(drift_result: dict, format_output: str):
+    """Print the drift report in text or JSON format."""
+    report = drift_result["drift_report"]
+    summary = drift_result["summary"]
+
+    if format_output == "json":
+        print(json.dumps(drift_result, indent=2))
+        return
+
+    print("=" * 60)
+    print(" Architecture Drift Report (v2.0.0)")
+    print("=" * 60)
+    print(f"Confirmed Drift:        {summary['confirmed']}")
+    print(f"Potential Drift:        {summary['potential']}")
+    print(f"Unverified Modules:     {summary['unverified']}")
+    print(f"User-Approved Exceptions: {summary['approved_exceptions']}")
+    print("-" * 60)
+
+    if not report:
+        print("No drift detected. All verified modules are up to date.")
+        print("=" * 60)
+        return
+
+    for entry in report:
+        cat = entry["category"]
+        icon = {
+            "Confirmed Drift": "🔴",
+            "Potential Drift": "🟡",
+            "Unverified": "⚪",
+            "User-Approved Exception": "✅",
+        }.get(cat, "?")
+        print(f"\n{icon} [{cat}] {entry['module']}")
+        print(f"   Path:           {entry['path']}")
+        if entry["changed_files"]:
+            print(f"   Changed Files:  {', '.join(entry['changed_files'][:3])}")
+            if len(entry["changed_files"]) > 3:
+                print(f"                   ... and {len(entry['changed_files']) - 3} more")
+        print(f"   Recommendation: {entry['recommendation']}")
+
+    print("\n" + "=" * 60)
+    print("NOTE: Drift detection is READ-ONLY. No blueprint changes were made.")
+    print("      Use 'blublu update' or 'blublu rebuild' to sync the blueprint.")
+    print("=" * 60)
+
+
 def main():
     args = parse_args()
+
+    # --validate-graph mode: validate a graph export file, then exit
+    if args.validate_graph:
+        result = validate_graph_file(args.validate_graph)
+        if args.format == "json":
+            print(json.dumps(result, indent=2))
+        else:
+            if result["valid"]:
+                print(f"✔ Graph is VALID: {args.validate_graph}")
+            else:
+                print(f"✖ Graph is INVALID: {args.validate_graph}")
+            for err in result["errors"]:
+                print(f"  [ERR]  {err}")
+            for warn in result["warnings"]:
+                print(f"  [WARN] {warn}")
+        sys.exit(0 if result["valid"] else 1)
+
     res = validate_blueprint(
         args.path,
         check_files=args.check_files,
@@ -575,12 +926,21 @@ def main():
     )
 
     if args.format == "json":
-        print(json.dumps(res, indent=2))
+        output = dict(res)
+        # Optionally attach drift results to JSON output
+        if args.check_drift:
+            drift_result = check_drift(
+                args.path,
+                res.get("module_registry", []),
+                args.drift_exceptions,
+            )
+            output["drift"] = drift_result
+        print(json.dumps(output, indent=2))
     else:
         status_symbol = "✔ PASS" if res["valid"] else "✖ FAIL"
         mode_str = "Distributed" if res.get("distributed_mode") else "Single-File"
         print("=" * 60)
-        print(f" Codsblu (blublu) Blueprint Validator v1.2.0 — {status_symbol} ({mode_str})")
+        print(f" Codsblu (blublu) Blueprint Validator v2.0.0 — {status_symbol} ({mode_str})")
         print("=" * 60)
         print(f"File:               {res['file']}")
         print(f"Total Modules:      {res['metrics']['total_modules']}")
@@ -617,6 +977,18 @@ def main():
         else:
             print("Summary: Blueprint has validation errors. Fix issues or run 'blublu validate'.")
         print("=" * 60)
+
+        # --check-drift: print drift report after main validation output
+        if args.check_drift:
+            drift_result = check_drift(
+                args.path,
+                res.get("module_registry", []),
+                args.drift_exceptions,
+            )
+            _print_drift_report(drift_result, args.format)
+            # In strict mode, confirmed drift triggers non-zero exit
+            if args.strict and drift_result["summary"]["confirmed"] > 0:
+                sys.exit(2)
 
     # Exit codes: 0 = valid, 2 = broken paths / staleness in strict, 1 = structural error
     if res["valid"]:

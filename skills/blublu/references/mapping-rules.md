@@ -1,67 +1,118 @@
 # Mapping Rules & Depth Guidelines
 
-This reference defines how AI coding agents should map a codebase into `.agents/codebase-map.md`. It provides standards for mapping depth, module verification tagging, and directory ignore lists.
+This reference defines how AI coding agents should map a codebase into `.agents/codebase-map.md` and the hierarchical sub-blueprint system. It provides standards for mapping depth, the 4-level hierarchical architecture, module verification tagging, and directory ignore lists.
 
 ---
 
 ## 1. Balanced Mapping Depth
 
-Codebase documentation must strike a balance between high-level architectural insight and token efficiency. We standardize on **Three Levels of Mapping Depth**:
+Codebase documentation must strike a balance between high-level architectural insight and token efficiency. blublu v2.0.0 uses a **Four-Level Hierarchical Architecture**:
 
 ```
-┌────────────────────────────────────────────────────────┐
-│ Level 1: System & Topology (Always Include)            │
-│  - Application type, runtime environment, entry points  │
-│  - Architectural style, high-level directory tree      │
-├────────────────────────────────────────────────────────┤
-│ Level 2: Module & Component Boundaries (Core Focus)    │
-│  - First-party modules, paths, core responsibilities   │
-│  - Intersystem dependencies, public interfaces         │
-├────────────────────────────────────────────────────────┤
-│ Level 3: Critical Implementation Details (Selective)   │
-│  - Domain models, database schemas, primary data flows │
-│  - External integrations, crucial business invariants  │
-└────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│ Level 1: Global Architecture  (.agents/codebase-map.md)               │
+│  - Project overview, major domains, global tech stack                  │
+│  - High-level architecture style, Sub-Blueprints Index                 │
+│  - Token budget: 500–700 tokens. ALWAYS read first.                    │
+├────────────────────────────────────────────────────────────────────────┤
+│ Level 2: Domain Architecture  (.agents/sub-blueprints/<domain>.md)    │
+│  - Domain responsibilities, module list, internal dependencies         │
+│  - Domain-scoped data flows and public API surface                     │
+│  - Token budget: 400–600 tokens. Load ONLY the relevant domain.        │
+├────────────────────────────────────────────────────────────────────────┤
+│ Level 3: Module Architecture  (.agents/sub-blueprints/<domain>/<mod>) │
+│  - Entry points, public interfaces, local/cross-domain dependencies    │
+│  - Database entities, verification metadata                            │
+│  - Token budget: 300–500 tokens. Load only for interface-level changes.│
+├────────────────────────────────────────────────────────────────────────┤
+│ Level 4: Detailed Architecture  (section appended to Level 3 file)    │
+│  - Algorithm descriptions, state machines, security invariants         │
+│  - Load ONLY on explicit user request for implementation details.      │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Depth Guidelines by Level
 
-#### Level 1: System Architecture (Always Map)
-- Overall runtime and platform targets (e.g., Node.js v20, Go 1.22, Python 3.11, Next.js App Router).
-- Primary bootstrap files and runtime entry points (CLI bin, HTTP listener, queue worker, lambda handler).
-- Top-level directory structure (limit depth to 2–3 levels).
+#### Level 1: Global Architecture (Always Concise)
+- Project name, type, primary language/framework, global tech stack.
+- List of major domains/services (names + one-line responsibilities).
+- Architecture style (microservices, monolith, event-driven, BFF, etc.).
+- Cross-domain dependency topology (high-level Mermaid `graph TD`).
+- Sub-Blueprints Index table (for distributed mode projects).
+- **Token budget target: 500–700 tokens. If Level 1 exceeds 800 tokens, migrate detail to Level 2.**
 
-#### Level 2: Module & Boundary Mapping (The Core of the Blueprint)
-- Map every distinct functional domain or directory boundary in `Module Registry`.
-- Identify explicit inter-module dependencies (who imports from whom).
-- Specify the public responsibility of each module in 1–2 dense sentences.
+#### Level 2: Domain Architecture (Core Focus)
+- Domain identity: name, type (service/library/frontend/infra), owning team.
+- Domain responsibilities (3–5 bullet points).
+- Module Registry for this domain (abbreviated: Module, Path, Responsibility, Status).
+- Internal dependency map (Mermaid `graph TD` scoped to this domain).
+- Domain-level data flows (request lifecycle, event processing).
+- Public API surface (endpoint list or exported interface summary).
+- Cross-domain integration points (which Level 1 services this domain calls/emits to).
+- **Token budget target: 400–600 tokens.**
 
-#### Level 3: Critical Logic & Contracts (Selective Inclusion)
-- **INCLUDE**:
-  - Primary API route endpoints and method verbs.
-  - Core database entities and relational foreign key relationships.
-  - Critical end-to-end data flows (e.g. login, payment checkout, webhook processing).
-  - External 3rd-party services and required environment keys.
-  - Hard business invariants (e.g., "tenants cannot share data", "refunds require manager approval").
-- **DO NOT INCLUDE (Micro-Noise / Slop)**:
-  - Private helper functions or utility internals.
-  - Local variables, loop counters, and transient state.
-  - CSS classes, layout styling, and minor markup adjustments.
-  - Complete copies of raw code snippets, interfaces, or type definitions.
-  - Low-level unit test names or boilerplate getters and setters.
+#### Level 3: Module Architecture (Selective Inclusion)
+- Module identity: name, path, owner, verification status.
+- Entry points and bootstrap sequence.
+- Public interface: exported functions, classes, events, or HTTP routes (with signatures).
+- Local dependencies (what this module imports from within the domain).
+- Cross-domain dependencies (external imports).
+- Database entities owned by this module.
+- Verification metadata: last verified date, verifying agent/tool.
+- **Token budget target: 300–500 tokens.**
+- **When to create Level 3**: Module has >3 public exports, owns a DB schema, is imported by >5 other modules, or has significant technical debt.
+
+#### Level 4: Detailed Architecture (Optional, On-Demand)
+- Algorithm descriptions for non-obvious business logic.
+- State machine diagrams for complex workflows.
+- Performance constraints and known hotspots.
+- Security-sensitive code sections requiring special care.
+- Historical context for unusual design decisions (ADR-style rationale).
+- **NEVER create Level 4 proactively.** Only when user explicitly asks for implementation details.
 
 ---
 
-## 2. Verification Status System
+## 2. Hierarchical Architecture Mapping Protocol (v2.0.0)
+
+blublu v2.0.0 replaces the flat single-file blueprint with an optional hierarchical multi-file system for large projects. Single-file blueprints from v1.0–v1.2 remain fully supported.
+
+### Architecture Modes
+
+| Mode | Root File | Sub-Blueprint Directory | Use When |
+| :--- | :--- | :--- | :--- |
+| **Single-File** (v1.x compatible) | `.agents/codebase-map.md` | Not present | Projects with ≤40 modules |
+| **Distributed** (v1.2+ feature) | `.agents/codebase-map.md` (index) | `.agents/sub-blueprints/<domain>.md` | 10–50 domains |
+| **Hierarchical** (v2.0 feature) | `.agents/codebase-map.md` (global index) | `.agents/sub-blueprints/<domain>.md` + `.agents/sub-blueprints/<domain>/<module>.md` | 50+ modules or complex domains |
+
+### Level 1 Content Rules
+- Section 5 Module Registry at Level 1 must list DOMAINS (not individual files).
+- Each row aggregates an entire domain into a single entry.
+- If distributed mode: Section 5 also contains a `Sub-Blueprints Index` table.
+- Level 1 NEVER contains per-module function signatures, database column definitions, or API route listings.
+
+### Level 2 Content Rules
+- One file per domain. File name must be the domain slug (e.g., `order.md`, `shared-libs.md`).
+- Module Registry in Level 2 lists the actual modules within that domain.
+- Cross-domain dependencies are recorded with Confidence labels (see Section 6 of update-rules.md).
+
+### Level 3 Content Rules
+- One file per module, nested under the domain directory.
+- Path: `.agents/sub-blueprints/<domain>/<module-slug>.md`
+- Must include a machine-readable metadata block at the top.
+- Level 4 is appended as the last section of the Level 3 file (not a separate file).
+
+---
+
+## 3. Verification Status System
 
 Every tracked module in the **Module Registry** MUST carry an explicit status tag:
 
 | Status Tag | Definition & Criteria | When to Assign |
 | :--- | :--- | :--- |
 | `[Verified]` | Confirmed directly against source code files. File exists, exports match, and dependencies are validated by reading imports. | Assigned when the agent directly inspects the module files on disk and confirms their contents. |
-| `[Inferred]` | Deduced from standard framework conventions, file/folder names, or package manifests without full deep file inspection. | Assigned during quick initialization scans when directory naming clearly implies responsibility (e.g., `src/routes/auth.ts`). |
-| `[Unverified]` | Mentioned in legacy comments, documentation, or suggested by naming, but not corroborated or partially ambiguous. | Assigned when a component's exact role or active status is unclear and needs further inspection before trusting. |
-| `[Stale]` | Previously verified, but underlying source files have undergone modifications, renames, or deletions since the last verification. | Assigned automatically when git diff or file hashes indicate the module was touched without blueprint synchronization. |
+| `[Inferred]` | Deduced from standard framework conventions, file/folder names, or package manifests without full deep file inspection. | Assigned during quick initialization scans when directory naming clearly implies responsibility. |
+| `[Unverified]` | Mentioned in legacy comments, documentation, or suggested by naming, but not corroborated or partially ambiguous. | Assigned when a component's exact role or active status is unclear and needs further inspection. |
+| `[Stale]` | Previously verified, but underlying source files have undergone modifications since the last verification. | Assigned automatically when git diff or file hashes indicate the module was touched without blueprint synchronization. |
 
 ### Status Transition Lifecycle
 
@@ -85,7 +136,54 @@ Every tracked module in the **Module Registry** MUST carry an explicit status ta
 
 ---
 
-## 3. Ignore Patterns (Scanning Filter)
+## 4. Hierarchical Agent Navigation Protocol
+
+AI agents using blublu v2.0.0 MUST follow this loading sequence precisely:
+
+```
+User Prompt Received
+       │
+       ▼
+Step 1: READ .agents/codebase-map.md (Level 1 — Global Architecture)
+       │
+       ├─ Is this a global/cross-domain question?
+       │  YES → Answer from Level 1. STOP. Do not load sub-blueprints.
+       │
+       ▼
+Step 2: IDENTIFY domain(s) touched by the prompt
+       │
+       ├─ No sub-blueprints directory? → Work with Level 1 only. STOP.
+       │
+       ▼
+Step 3: LOAD .agents/sub-blueprints/<domain>.md (Level 2)
+       │  Load ONLY the matching domain. Never load all domains.
+       │
+       ├─ Are changes limited to internal implementation?
+       │  YES → Work from Level 2. STOP.
+       │
+       ▼
+Step 4 (Conditional): LOAD .agents/sub-blueprints/<domain>/<module>.md (Level 3)
+       │  ONLY if: change touches a public interface/API, exported contract,
+       │  database schema owned by this module, or cross-domain dependency.
+       │
+       ▼
+Step 5 (Explicit Only): READ Level 4 section in Level 3 file
+       ONLY when user explicitly asks for implementation details.
+```
+
+### Navigation Rules (Mandatory)
+
+1. **Always start at Level 1.** No exceptions, even if you think you know the codebase.
+2. **Load the minimum sufficient context.** Each additional level loaded = tokens consumed permanently for that session.
+3. **Never load all sub-blueprints simultaneously.** This violates the entire purpose of hierarchical mapping.
+4. **Level 3 is rare.** Most day-to-day tasks (bug fixes, feature additions, refactors) are fully solvable from Level 1 + Level 2.
+5. **Level 4 is on-demand only.** Never load it preemptively.
+6. **After completing a task, update ONLY the levels you read.** Do not cascade updates to unread levels.
+7. **Never infer cross-domain dependencies without evidence.** Only record what is backed by source code (see update-rules.md Section 6).
+
+---
+
+## 5. Ignore Patterns (Scanning Filter)
 
 To prevent context exhaustion and irrelevant noise, AI agents MUST NEVER scan or index the following directories and file patterns:
 
@@ -109,6 +207,7 @@ To prevent context exhaustion and irrelevant noise, AI agents MUST NEVER scan or
 ### Version Control & Agent Tracking
 - `.git/`, `.svn/`, `.hg/`
 - `.agents/scratch/` (Temporary agent notes; do not index as source)
+- `.agents/.pending-changes.json`, `.agents/.codsblu.pid`, `.agents/.cache_scan.json` (Runtime artifacts)
 
 ### Caches, Temporary Files & Logs
 - `.cache/`, `.turbo/`, `.parcel-cache/`
@@ -133,7 +232,7 @@ To prevent context exhaustion and irrelevant noise, AI agents MUST NEVER scan or
 
 ---
 
-## 4. Large Monorepo & Token Budget Mitigations
+## 6. Large Monorepo & Token Budget Mitigations
 
 When maintaining codebase blueprints for large repositories or multi-package monorepos:
 
@@ -145,15 +244,16 @@ When maintaining codebase blueprints for large repositories or multi-package mon
      ```markdown
      | `BillingApp` | `apps/billing` | Invoicing, subscription state machine, and payment callbacks | `SharedDb`, `SharedAuth` | [Verified] |
      ```
-3. **Sub-Blueprint Staging & Progressive Loading**:
-   For repositories with more than 30–50 modules, use Codsblu v1.2.0 **Distributed Blueprints**:
-   - The root `.agents/codebase-map.md` serves strictly as the global index and architecture topology (Sections 1–4, 6, 8–15), with Section 5 maintaining high-level domain entries and the `Sub-Blueprints Index`.
-   - Granular submodules, domain flows, and domain tables are stored in `.agents/sub-blueprints/<domain>.md` conforming to [sub-blueprint-template.md](sub-blueprint-template.md).
-   - **Progressive Context Loading Rule**: Agents are strictly FORBIDDEN from reading all sub-blueprints at task start. Agents must read `.agents/codebase-map.md` first, resolve which domain is affected by the prompt, and selectively load *only* that domain's sub-blueprint into context.
+3. **Hierarchical Blueprint System (v2.0.0 Solution)**:
+   For repositories with more than 15–50 modules, use the full Hierarchical Architecture:
+   - **Level 1** (`.agents/codebase-map.md`): Global index only. Domains aggregated into single rows. Max 700 tokens.
+   - **Level 2** (`.agents/sub-blueprints/<domain>.md`): Per-domain detail. Load only the touched domain.
+   - **Level 3** (`.agents/sub-blueprints/<domain>/<module>.md`): Per-module detail. Load only for interface-level changes.
+   - **Progressive Context Loading Rule**: Agents are strictly FORBIDDEN from reading all sub-blueprints at task start.
 
 ---
 
-## 5. Mermaid Diagram Manipulation Protocol
+## 7. Mermaid Diagram Manipulation Protocol
 
 When updating Section 6 (Dependency Mapping), AI agents MUST follow these precise syntax rules to prevent corrupting the diagram:
 
@@ -173,5 +273,4 @@ When updating Section 6 (Dependency Mapping), AI agents MUST follow these precis
    - Use `-.->` for asynchronous, event-driven, or optional dependencies.
    - Use `==>` for primary critical execution paths.
 5. **Preserve Diagram Fences**:
-   Never delete the opening ```` ```mermaid ```` or closing ```` ``` ```` fences when adding or removing edges.
-
+   Never delete the opening ` ```mermaid ` or closing ` ``` ` fences when adding or removing edges.

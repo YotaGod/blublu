@@ -1,0 +1,38 @@
+{
+  "name": "nexus-commerce-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/shared-config",
+    "packages/shared-auth",
+    "packages/shared-db",
+    "apps/api-gateway",
+    "apps/user-service",
+    "apps/order-service",
+    "apps/inventory-service",
+    "apps/billing-service",
+    "apps/notification-service",
+    "apps/analytics-service",
+    "apps/admin-dashboard",
+    "apps/customer-portal",
+    "services/worker-jobs",
+    "services/file-storage",
+    "infra/terraform"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "dev": "turbo run dev --parallel"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.3.0"
+  }
+}

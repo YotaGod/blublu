@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """
-Codsblu (blublu) v1.2.0 — Unified CLI Engine
+Codsblu (blublu) v2.0.0 — Unified CLI Engine
 Autonomous codebase memory management, validation, status reporting, migration,
-and local filesystem watcher orchestration.
+drift detection, dependency analysis, module inspection, and filesystem watcher.
+
+New in v2.0.0:
+  codsblu drift      -- Classify architecture drift per module (4 categories)
+  codsblu analyze    -- Show hierarchical context for a specific module (L1→L3)
+  codsblu dependencies -- Display dependency map for a module or entire project
+  codsblu watch --scope <domain> -- Domain-scoped filesystem monitoring
 
 Dependencies: Pure Python 3 standard library.
 """
@@ -424,10 +430,14 @@ def cmd_watch(args):
         print("[ERR] watcher.py module not found.", file=sys.stderr)
         return 1
 
-    watcher.start_watcher(root, debounce_ms=args.debounce)
+    scope = getattr(args, "scope", None)
+    watcher.start_watcher(root, debounce_ms=args.debounce, scope=scope)
     return 0
 
 
+# ------------------------------------------------------------------------------
+# Command: stop
+# ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Command: stop
 # ------------------------------------------------------------------------------
@@ -445,10 +455,337 @@ def cmd_stop(args):
     return 0
 
 
+# ------------------------------------------------------------------------------
+# Command: drift (v2.0.0)
+# ------------------------------------------------------------------------------
+def cmd_drift(args):
+    """Run the architecture drift detection engine manually."""
+    root = resolve_project_root(args.path)
+    blueprint = get_blueprint_path(root)
+
+    if not blueprint.is_file():
+        print(f"[ERR] Blueprint not found: {blueprint}", file=sys.stderr)
+        return 1
+
+    # Import validate-blueprint's check_drift function dynamically
+    validate_script = CURRENT_DIR / "validate-blueprint.py"
+    check_drift_fn = None
+    if validate_script.is_file():
+        try:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("validate_blueprint", validate_script)
+            vb_mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(vb_mod)
+            check_drift_fn = getattr(vb_mod, "check_drift", None)
+            _print_drift_report = getattr(vb_mod, "_print_drift_report", None)
+        except Exception as e:
+            print(f"[WARN] Could not import validate-blueprint: {e}", file=sys.stderr)
+
+    if check_drift_fn is None:
+        # Fallback: delegate to subprocess
+        import subprocess
+        cmd = [
+            sys.executable,
+            str(validate_script),
+            "--path", str(blueprint),
+            "--check-drift",
+        ]
+        if hasattr(args, "exceptions") and args.exceptions:
+            cmd += ["--drift-exceptions", args.exceptions]
+        fmt = getattr(args, "format", "text")
+        if fmt:
+            cmd += ["--format", fmt]
+        result = subprocess.run(cmd, capture_output=False)
+        return result.returncode
+
+    # Parse module registry from blueprint
+    content = blueprint.read_text(encoding="utf-8")
+    sec5_match = re.search(r"##\s+5\.[^\n]*\n(.*?)(?=\n##\s+6\.|\Z)", content, re.DOTALL)
+    module_registry = []
+    if sec5_match:
+        body = sec5_match.group(1)
+        split = re.split(r"\n###", body)
+        body = split[0] if split else body
+        for line in body.splitlines():
+            stripped = line.strip()
+            if not stripped.startswith("|"):
+                continue
+            if re.match(r"^\|[\s\-:| ]+\|$", stripped):
+                continue
+            cols = [c.strip() for c in stripped.split("|") if c.strip()]
+            if len(cols) >= 2:
+                name = cols[0].strip("`*").strip()
+                path = cols[1].strip("`").strip()
+                status = cols[-1] if len(cols) >= 3 else "[Unverified]"
+                if name and name.lower() not in ("module", "domain", "service", "name"):
+                    module_registry.append({"name": name, "path": path, "status": status})
+
+    exceptions_str = getattr(args, "exceptions", "") or ""
+    drift_result = check_drift_fn(str(blueprint), module_registry, exceptions_str)
+
+    fmt = getattr(args, "format", "text")
+    if fmt == "json":
+        print(json.dumps(drift_result, indent=2))
+    else:
+        # Print drift report
+        report = drift_result["drift_report"]
+        summary = drift_result["summary"]
+        print("=" * 60)
+        print(" Architecture Drift Report (Codsblu v2.0.0)")
+        print("=" * 60)
+        print(f"Confirmed Drift:          {summary['confirmed']}")
+        print(f"Potential Drift:          {summary['potential']}")
+        print(f"Unverified Modules:       {summary['unverified']}")
+        print(f"User-Approved Exceptions: {summary['approved_exceptions']}")
+        print("-" * 60)
+        if not report:
+            print("No drift detected. All verified modules are up to date.")
+        else:
+            for entry in report:
+                cat = entry["category"]
+                icons = {
+                    "Confirmed Drift": "[!!]",
+                    "Potential Drift": "[??]",
+                    "Unverified": "[ ]",
+                    "User-Approved Exception": "[ok]",
+                }
+                icon = icons.get(cat, "[?]")
+                print(f"\n{icon} [{cat}] {entry['module']}")
+                print(f"     Path: {entry['path']}")
+                if entry.get("changed_files"):
+                    print(f"     Changed: {', '.join(entry['changed_files'][:3])}")
+                print(f"     Recommendation: {entry['recommendation']}")
+        print("=" * 60)
+        print("NOTE: Drift detection is READ-ONLY. No blueprint changes were made.")
+    return 0
+
+
+# ------------------------------------------------------------------------------
+# Command: analyze (v2.0.0)
+# ------------------------------------------------------------------------------
+def cmd_analyze(args):
+    """Display hierarchical architecture context for a specific module (L1 → L3)."""
+    root = resolve_project_root(args.path)
+    blueprint = get_blueprint_path(root)
+    module_name = getattr(args, "module_name", "").strip()
+
+    if not module_name:
+        print("[ERR] Please provide a module name: codsblu analyze <module-name>", file=sys.stderr)
+        return 1
+
+    if not blueprint.is_file():
+        print(f"[ERR] Blueprint not found: {blueprint}", file=sys.stderr)
+        return 1
+
+    print("=" * 60)
+    print(f" Module Analysis: {module_name}")
+    print("=" * 60)
+
+    # Level 1: Search in root blueprint
+    content = blueprint.read_text(encoding="utf-8")
+    sec5_match = re.search(r"##\s+5\.[^\n]*\n(.*?)(?=\n##\s+6\.|\Z)", content, re.DOTALL)
+    l1_entry = None
+    domain_hint = None
+
+    if sec5_match:
+        body = sec5_match.group(1).split("###")[0]
+        for line in body.splitlines():
+            if not line.strip().startswith("|"):
+                continue
+            cols = [c.strip() for c in line.split("|") if c.strip()]
+            if len(cols) >= 2:
+                name = cols[0].strip("`*").strip()
+                if name.lower() == module_name.lower() or module_name.lower() in name.lower():
+                    l1_entry = cols
+                    domain_hint = name
+                    break
+
+    if l1_entry:
+        print(f"\n[Level 1] Found in root blueprint:")
+        print(f"  Module: {l1_entry[0]}")
+        print(f"  Path:   {l1_entry[1] if len(l1_entry) > 1 else 'N/A'}")
+        print(f"  Status: {l1_entry[-1] if len(l1_entry) >= 3 else 'N/A'}")
+    else:
+        print(f"\n[Level 1] '{module_name}' not found in root blueprint Module Registry.")
+        print(f"  → Load .agents/codebase-map.md for full global context.")
+
+    # Level 2: Search in sub-blueprints
+    sub_dir = get_sub_blueprints_dir(root)
+    l2_file = None
+    l2_entry = None
+
+    if sub_dir.is_dir():
+        # Look for a sub-blueprint whose name or content mentions the module
+        for md_file in sorted(sub_dir.glob("*.md")):
+            sub_content = md_file.read_text(encoding="utf-8")
+            if module_name.lower() in sub_content.lower():
+                l2_file = md_file
+                # Try to extract the specific row
+                for line in sub_content.splitlines():
+                    if not line.strip().startswith("|"):
+                        continue
+                    cols = [c.strip() for c in line.split("|") if c.strip()]
+                    if len(cols) >= 2:
+                        name = cols[0].strip("`*").strip()
+                        if name.lower() == module_name.lower():
+                            l2_entry = cols
+                            break
+                break
+
+        if l2_file:
+            print(f"\n[Level 2] Found in domain sub-blueprint: {l2_file.name}")
+            if l2_entry:
+                print(f"  Module: {l2_entry[0]}")
+                print(f"  Path:   {l2_entry[1] if len(l2_entry) > 1 else 'N/A'}")
+                print(f"  Responsibility: {l2_entry[2] if len(l2_entry) > 2 else 'N/A'}")
+                print(f"  Status: {l2_entry[-1] if len(l2_entry) >= 3 else 'N/A'}")
+            print(f"  → Full domain context: {l2_file.relative_to(root)}")
+        else:
+            print(f"\n[Level 2] '{module_name}' not found in any domain sub-blueprint.")
+            print(f"  → No Level 2 file exists yet. Use 'codsblu migrate --to-distributed' to create them.")
+
+    # Level 3: Check for module-level blueprint
+    l3_found = False
+    if sub_dir.is_dir():
+        for md_file in sorted(sub_dir.rglob("*.md")):
+            if md_file.parent == sub_dir:
+                continue  # Skip Level 2 files (direct children)
+            stem = md_file.stem.lower().replace("-", "_").replace(" ", "_")
+            if stem == module_name.lower().replace("-", "_").replace(" ", "_") or module_name.lower() in stem:
+                l3_found = True
+                print(f"\n[Level 3] Module blueprint found: {md_file.relative_to(root)}")
+                # Print first few lines of the Level 3 file
+                l3_lines = md_file.read_text(encoding="utf-8").splitlines()[:15]
+                for ln in l3_lines:
+                    if ln.strip():
+                        print(f"  {ln}")
+                print(f"  → Load this file for public interface and DB entity details.")
+                break
+
+    if not l3_found:
+        print(f"\n[Level 3] No module-level blueprint found for '{module_name}'.")
+        print(f"  → Level 3 is optional. Create .agents/sub-blueprints/<domain>/{module_name.lower()}.md if needed.")
+
+    print(f"\n[Level 4] Load only on explicit user request for implementation details.")
+    print("=" * 60)
+    return 0
+
+
+# ------------------------------------------------------------------------------
+# Command: dependencies (v2.0.0)
+# ------------------------------------------------------------------------------
+def cmd_dependencies(args):
+    """Display the dependency map extracted from blueprint Mermaid graphs and tables."""
+    root = resolve_project_root(args.path)
+    blueprint = get_blueprint_path(root)
+    filter_module = getattr(args, "module", "") or ""
+    fmt = getattr(args, "format", "table")
+
+    if not blueprint.is_file():
+        print(f"[ERR] Blueprint not found: {blueprint}", file=sys.stderr)
+        return 1
+
+    all_edges = []
+
+    def parse_edges_from_content(content, source_file="root"):
+        edges = []
+        # Parse Mermaid graphs
+        mermaid_blocks = re.findall(r"```mermaid\s*\n(.*?)```", content, re.DOTALL)
+        for block in mermaid_blocks:
+            for line in block.splitlines():
+                line = line.strip()
+                # Match: NodeA --> NodeB, NodeA -.-> NodeB, NodeA -->|label| NodeB
+                m = re.match(
+                    r'(\w+)(?:\[.*?\]|\(\(.*?\)\))?\s*(-->|-.->|==>)(?:\|([^|]+)\|)?\s*(\w+)',
+                    line
+                )
+                if m:
+                    src, arrow, label, tgt = m.groups()
+                    etype = "event" if "-.->" in arrow else ("import" if "-->" in arrow else "api")
+                    edges.append({
+                        "source": src, "target": tgt, "type": etype,
+                        "label": label.strip() if label else f"{src}→{tgt}",
+                        "confidence": "Inferred",
+                        "source_file": source_file,
+                    })
+
+        # Parse dependency tables
+        table_pattern = re.compile(
+            r"\|[^\n]*\bSource\b[^\n]*\|\n\|[-: |]+\|\n((?:\|[^\n]+\|\n?)+)",
+            re.IGNORECASE
+        )
+        for match in table_pattern.finditer(content):
+            for line in match.group(1).strip().splitlines():
+                cols = [c.strip() for c in line.split("|") if c.strip()]
+                if len(cols) >= 4:
+                    src = cols[0].strip("`*").strip()
+                    tgt = cols[1].strip("`*").strip()
+                    etype = cols[2].strip().lower()
+                    label = cols[3] if len(cols) > 3 else ""
+                    conf_raw = cols[-1] if len(cols) >= 5 else "Inferred"
+                    conf = ("Confirmed" if "confirmed" in conf_raw.lower()
+                            else "Unverified" if "unverified" in conf_raw.lower()
+                            else "Inferred")
+                    if src and tgt and src.lower() not in ("source", "module"):
+                        edges.append({
+                            "source": src, "target": tgt, "type": etype,
+                            "label": label, "confidence": conf,
+                            "source_file": source_file,
+                        })
+        return edges
+
+    # Parse root blueprint
+    content = blueprint.read_text(encoding="utf-8")
+    all_edges += parse_edges_from_content(content, "codebase-map.md")
+
+    # Parse sub-blueprints
+    sub_dir = get_sub_blueprints_dir(root)
+    if sub_dir.is_dir():
+        for md_file in sorted(sub_dir.rglob("*.md")):
+            sub_content = md_file.read_text(encoding="utf-8")
+            all_edges += parse_edges_from_content(sub_content, md_file.name)
+
+    # Deduplicate
+    seen = set()
+    unique_edges = []
+    for e in all_edges:
+        key = (e["source"], e["target"], e["type"])
+        if key not in seen:
+            seen.add(key)
+            unique_edges.append(e)
+
+    # Filter by module if requested
+    if filter_module:
+        fname = filter_module.lower()
+        unique_edges = [
+            e for e in unique_edges
+            if fname in e["source"].lower() or fname in e["target"].lower()
+        ]
+
+    if not unique_edges:
+        scope_msg = f" for module '{filter_module}'" if filter_module else ""
+        print(f"No dependencies found{scope_msg}.")
+        return 0
+
+    if fmt == "json":
+        print(json.dumps(unique_edges, indent=2))
+    else:
+        # Markdown table format
+        header = "| Source | Target | Type | Label | Confidence |"
+        sep = "| :--- | :--- | :--- | :--- | :--- |"
+        print(header)
+        print(sep)
+        for e in unique_edges:
+            print(f"| `{e['source']}` | `{e['target']}` | `{e['type']}` | {e['label']} | {e['confidence']} |")
+
+    print(f"\n[INFO] Total edges: {len(unique_edges)}", file=sys.stderr)
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="codsblu",
-        description="Codsblu v1.2.0 — AI Codebase Memory & Architecture Tracking CLI",
+        description="Codsblu v2.0.0 — AI Codebase Memory & Architecture Tracking CLI",
     )
     subparsers = parser.add_subparsers(dest="subcommand", help="Available subcommands")
 
@@ -476,14 +813,32 @@ def main():
     p_mig.add_argument("--to-distributed", action="store_true", required=True, help="Migrate to distributed architecture")
     p_mig.add_argument("--path", default=".", help="Project directory")
 
-    # watch
+    # watch (enhanced in v2.0.0 with --scope)
     p_watch = subparsers.add_parser("watch", help="Start local filesystem change watcher")
     p_watch.add_argument("--path", default=".", help="Project directory")
     p_watch.add_argument("--debounce", type=int, default=2000, help="Debounce delay in ms")
+    p_watch.add_argument("--scope", default="", help="Watch only a specific domain directory (e.g. 'order')")
 
     # stop
     p_stop = subparsers.add_parser("stop", help="Stop background file watcher")
     p_stop.add_argument("--path", default=".", help="Project directory")
+
+    # drift (v2.0.0)
+    p_drift = subparsers.add_parser("drift", help="Run architecture drift detection engine")
+    p_drift.add_argument("--path", default=".", help="Project directory")
+    p_drift.add_argument("--exceptions", default="", help="Comma-separated module names to mark as user-approved exceptions")
+    p_drift.add_argument("--format", choices=["text", "json"], default="text", help="Output format")
+
+    # analyze (v2.0.0)
+    p_analyze = subparsers.add_parser("analyze", help="Show hierarchical architecture context for a module (L1→L3)")
+    p_analyze.add_argument("module_name", help="Module name or path to analyze")
+    p_analyze.add_argument("--path", default=".", help="Project directory")
+
+    # dependencies (v2.0.0)
+    p_deps = subparsers.add_parser("dependencies", help="Display dependency map for a module or entire project")
+    p_deps.add_argument("--path", default=".", help="Project directory")
+    p_deps.add_argument("--module", default="", help="Filter to edges involving this module name")
+    p_deps.add_argument("--format", choices=["table", "json"], default="table", help="Output format")
 
     args = parser.parse_args()
 
@@ -498,6 +853,9 @@ def main():
         "migrate": cmd_migrate,
         "watch": cmd_watch,
         "stop": cmd_stop,
+        "drift": cmd_drift,
+        "analyze": cmd_analyze,
+        "dependencies": cmd_dependencies,
     }
 
     code = handlers[args.subcommand](args)
