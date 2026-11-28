@@ -7,5 +7,5 @@ $PythonBin = (Get-Command python, python3 -ErrorAction SilentlyContinue | Select
 if (-not $PythonBin) {
     $PythonBin = "python"
 }
-& $PythonBin "$ScriptDir\codsblu.py" @args
+& $PythonBin "$ScriptDir\blublu.py" @args
 exit $LASTEXITCODE
