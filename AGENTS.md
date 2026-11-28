@@ -17,10 +17,10 @@ This project uses **blublu** to maintain persistent architectural memory using a
 - Never auto-apply destructive blueprint changes from drift detection reports — only report and recommend.
 
 ### CLI Tools Available
-- `codsblu status` — Architecture health summary and mode detection.
-- `codsblu validate --check-drift` — Drift detection across all modules.
-- `codsblu analyze <module>` — Hierarchical context for a specific module.
-- `codsblu dependencies [--module <name>]` — Full dependency map.
+- `blublu status` — Architecture health summary and mode detection.
+- `blublu validate --check-drift` — Drift detection across all modules.
+- `blublu analyze <module>` — Hierarchical context for a specific module.
+- `blublu dependencies [--module <name>]` — Full dependency map.
 - For complete protocols, consult `skills/blublu/SKILL.md`.
 <!-- blublu:end -->
 

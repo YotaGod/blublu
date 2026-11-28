@@ -68,6 +68,6 @@ credentials.json
 .agents/*.tmp.md
 
 # Codsblu Runtime Artifacts (generated at runtime; never commit)
-.agents/.codsblu.pid
+.agents/.blublu.pid
 .agents/.pending-changes.json
 .agents/.cache_scan.json

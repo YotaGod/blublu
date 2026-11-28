@@ -45,8 +45,8 @@ flowchart LR
   - Cross-references modified file lists with registered module paths.
   - Flags outdated modules as `[STALE / NEEDS REVIEW]` when files change without blueprint updates.
 - **Official GitHub Actions Workflows**:
-  - `.github/workflows/codsblu-validate.yml`: Pull request and push validation gate.
-  - `.github/workflows/codsblu-architecture-check.yml`: Detects code changes without blueprint updates and emits warning annotations.
+  - `.github/workflows/blublu-validate.yml`: Pull request and push validation gate.
+  - `.github/workflows/blublu-architecture-check.yml`: Detects code changes without blueprint updates and emits warning annotations.
 
 ---
 
@@ -79,7 +79,7 @@ flowchart LR
 - **Architecture Drift Detection Engine**: `--check-drift` (4 categories), `--drift-exceptions`, `--validate-graph`; non-destructive read-only.
 - **Cross-Service Dependency Analysis**: Confidence labels (Confirmed/Inferred/Unverified), circular dependency detection.
 - **Machine-Readable Graph Exporter** (`graph_export.py`): JSON/YAML export, schema validation, circular dep metadata.
-- **CLI v2.0.0**: `codsblu drift`, `codsblu analyze <module>`, `codsblu dependencies [--module] [--format]`, `codsblu watch --scope`.
+- **CLI v2.0.0**: `blublu drift`, `blublu analyze <module>`, `blublu dependencies [--module] [--format]`, `blublu watch --scope`.
 - **Stable Watcher**: Graceful restart on filesystem errors, `.agents/` exclusion, scope filtering.
 - **Multi-Agent Integration**: AGENTS.md/CLAUDE.md L1–L4 bootstrap protocol; SKILL.md v2.0.0 (Principles 8–9).
 

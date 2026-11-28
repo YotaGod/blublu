@@ -230,23 +230,23 @@ Distributed mode is strictly **opt-in**. Projects using v1.0 or v1.1 single-file
 
 ```
 scripts/
-├── codsblu.py      ← Core Python engine (init, status, validate, migrate, watch, stop)
+├── blublu.py      ← Core Python engine (init, status, validate, migrate, watch, stop)
 ├── watcher.py      ← Standalone background watcher daemon (debounce, PID, event queue)
 ├── scanner.py      ← Git/filesystem dual-mode change detector (from v1.1.0)
 ├── validate-blueprint.py  ← Standalone validator (from v1.0.0, updated in v1.2.0)
 │
-├── codsblu         ← POSIX shell launcher (Linux/macOS)
-├── codsblu.ps1     ← PowerShell launcher (Windows)
-└── codsblu.cmd     ← CMD launcher (Windows legacy)
+├── blublu         ← POSIX shell launcher (Linux/macOS)
+├── blublu.ps1     ← PowerShell launcher (Windows)
+└── blublu.cmd     ← CMD launcher (Windows legacy)
 ```
 
 ### B. Watcher Internals
 
 The watcher (`scripts/watcher.py`) operates as a background daemon:
-- Spawned via `codsblu watch`; PID written to `.agents/.codsblu.pid`.
+- Spawned via `blublu watch`; PID written to `.agents/.blublu.pid`.
 - Polls the project directory on a configurable interval (default: 3 seconds).
 - Uses debouncing (default: 500ms) to avoid flooding on rapid saves.
 - Writes accumulated events to `.agents/.pending-changes.json` atomically.
-- Terminated gracefully via `codsblu stop` (SIGTERM on POSIX, `taskkill` on Windows).
+- Terminated gracefully via `blublu stop` (SIGTERM on POSIX, `taskkill` on Windows).
 - Respects the same ignore list as `scanner.py`: `node_modules/`, `vendor/`, `.git/`, `dist/`, `build/`, `coverage/`, `.next/`, `.cache/`, `__pycache__/`.
 

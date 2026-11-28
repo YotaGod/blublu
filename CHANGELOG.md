@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Enterprise Monorepo Support**: `tests/fixtures/enterprise-monorepo/` fixture (15 services, 10 domains, L1+L2+L3 blueprints).
 - **Advanced Cross-Service Dependency Analysis**: Confirmed/Inferred/Unverified confidence labels, standard dependency table format, circular dependency detection, `update-rules.md` Section 6.
 - **Architecture Drift Detection Engine**: `--check-drift` (4 categories), `--drift-exceptions`, `--validate-graph` flags in `validate-blueprint.py`; non-destructive read-only.
-- **CLI Enhancements (v2.0.0)**: `codsblu drift`, `codsblu analyze <module>`, `codsblu dependencies [--module] [--format]`, `codsblu watch --scope <domain>`.
+- **CLI Enhancements (v2.0.0)**: `blublu drift`, `blublu analyze <module>`, `blublu dependencies [--module] [--format]`, `blublu watch --scope <domain>`.
 - **Stable Watcher**: Graceful restart on filesystem errors (max 10 consecutive), `.agents/` excluded from watch scope, `--scope` domain filter, `--validate-interval` option.
 - **Machine-Readable Architecture Graph (`graph_export.py`)**: JSON/YAML export, `--validate-graph`, `--include-sub-blueprints`, circular dependency detection in metadata.
 - **Multi-Agent Integration**: AGENTS.md and CLAUDE.md bootstrap blocks updated with L1–L4 protocol; SKILL.md v2.0.0 with Principle 8 (Hierarchical Loading) and Principle 9 (Evidence-Based Dependencies).
@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `mapping-rules.md`: Added Sections 2 (Hierarchical Mapping L1–L4) and 4 (Agent Navigation Protocol).
 - `update-rules.md`: Added Section 6 (Cross-Service Dependency Analysis Protocol).
 - `validate-blueprint.py`: v2.0.0 — added `--check-drift`, `--drift-exceptions`, `--validate-graph` args.
-- `codsblu.py`: v2.0.0 — added `drift`, `analyze`, `dependencies` commands and `watch --scope`.
+- `blublu.py`: v2.0.0 — added `drift`, `analyze`, `dependencies` commands and `watch --scope`.
 - `watcher.py`: v2.0.0 — graceful restart, `.agents/` exclusion, scope filtering.
 - `SKILL.md`: v2.0.0 — Principle 8 updated, Principle 9 added.
 - `AGENTS.md`, `CLAUDE.md`: Updated bootstrap blocks with hierarchical loading protocol.
@@ -38,19 +38,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Sub-blueprint schema specification (`skills/blublu/references/sub-blueprint-template.md`).
   - `Sub-Blueprints Index` integration in Section 5 of `.agents/codebase-map.md`.
   - Context-Aware / Progressive Loading rule for AI agents (root index first, zero premature bulk loading).
-- **Unified Standalone CLI Engine (`scripts/codsblu.py`)**:
-  - `codsblu init [--distributed]`: Instant bootstrap of single-file or distributed architecture.
-  - `codsblu status`: Comprehensive architecture health summary, mode detection, and background watcher status.
-  - `codsblu validate`: End-to-end multi-blueprint validation, broken path check, and orphaned sub-blueprint detection.
-  - `codsblu migrate --to-distributed`: Intelligent automated decomposition of single-file maps into domain sub-blueprints.
-  - `codsblu watch` & `codsblu stop`: Background filesystem watcher lifecycle management.
+- **Unified Standalone CLI Engine (`scripts/blublu.py`)**:
+  - `blublu init [--distributed]`: Instant bootstrap of single-file or distributed architecture.
+  - `blublu status`: Comprehensive architecture health summary, mode detection, and background watcher status.
+  - `blublu validate`: End-to-end multi-blueprint validation, broken path check, and orphaned sub-blueprint detection.
+  - `blublu migrate --to-distributed`: Intelligent automated decomposition of single-file maps into domain sub-blueprints.
+  - `blublu watch` & `blublu stop`: Background filesystem watcher lifecycle management.
 - **Cross-Platform CLI Wrappers**:
-  - `scripts/codsblu` (POSIX Bash wrapper for Linux & macOS).
-  - `scripts/codsblu.ps1` & `scripts/codsblu.cmd` (PowerShell and Batch wrappers for Windows).
+  - `scripts/blublu` (POSIX Bash wrapper for Linux & macOS).
+  - `scripts/blublu.ps1` & `scripts/blublu.cmd` (PowerShell and Batch wrappers for Windows).
 - **Local Filesystem Change Watcher (`scripts/watcher.py`)**:
   - Polling event loop with configurable debounce delay (default 2000ms).
   - Deterministic event queue in `.agents/.pending-changes.json`.
-  - Process PID tracking in `.agents/.codsblu.pid`.
+  - Process PID tracking in `.agents/.blublu.pid`.
   - Strict security guardrail: strictly zero automated remote paid LLM API calls.
 - **Validator Upgrade for Distributed Mode (`scripts/validate-blueprint.py`)**:
   - Auto-discovery of registered sub-blueprints and cross-validation against physical disk files.
@@ -77,8 +77,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Staleness & Architecture Drift Detection (`--check-staleness`)**:
   - Cross-references modified source files with registered module paths to detect drift before commits.
 - **Official GitHub Actions CI Workflows**:
-  - `.github/workflows/codsblu-validate.yml`: Continuous validation gate for pull requests and pushes.
-  - `.github/workflows/codsblu-architecture-check.yml`: Flags source code changes without architectural blueprint synchronization.
+  - `.github/workflows/blublu-validate.yml`: Continuous validation gate for pull requests and pushes.
+  - `.github/workflows/blublu-architecture-check.yml`: Flags source code changes without architectural blueprint synchronization.
 - **Product Roadmap (`docs/roadmap.md`)**:
   - Comprehensive milestone architecture from v1.0.0 through v2.0.0.
 - **Test Fixtures & Scenarios**:

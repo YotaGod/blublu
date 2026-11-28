@@ -3,7 +3,7 @@
 
 # Force LF for shell scripts (must be LF on all platforms for POSIX compatibility)
 *.sh text eol=lf
-scripts/codsblu text eol=lf
+scripts/blublu text eol=lf
 
 # Force CRLF for Windows-native batch/PowerShell files
 *.cmd text eol=crlf

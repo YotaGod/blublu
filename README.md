@@ -237,7 +237,7 @@ blublu/
 
 - [x] **v1.0.0**: Core Skill, 15-Section Blueprint Template, Mapping Rules, Update Engine, Cross-platform Installers (`install.sh`, `install.ps1`), Headless Python Validator, Fixtures & Test Scenarios.
 - [x] **v1.1.0**: Advanced Filesystem Fallback Scanner (`scripts/scanner.py`), Automated Mermaid Syntax Validator & Table Fallback, Staleness/Drift Detection (`--check-staleness`), Official GitHub Actions CI Workflows (`.github/workflows/`).
-- [x] **v1.2.0**: Distributed Sub-Blueprints (`.agents/sub-blueprints/`), Context-Aware Progressive Loading, Unified `codsblu` CLI Engine, Background File Watcher (`scripts/watcher.py`).
+- [x] **v1.2.0**: Distributed Sub-Blueprints (`.agents/sub-blueprints/`), Context-Aware Progressive Loading, Unified `blublu` CLI Engine, Background File Watcher (`scripts/watcher.py`).
 - [ ] **v1.3.0**: Interactive CLI visualizer and webview sidecar integration.
 - [ ] **v2.0.0**: Autonomous Architectural Evolution with LSP call-graph synthesis and swarm arbitration.
 
