@@ -23,26 +23,26 @@ The shell installer automatically detects installed AI agents and places skill f
 
 ```bash
 # Install to current repository (Project Scope)
-curl -fsSL https://raw.githubusercontent.com/blublu/blublu/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/YotaGod/blublu/main/install.sh | bash
 
 # Install globally for all repositories
-curl -fsSL https://raw.githubusercontent.com/blublu/blublu/main/install.sh | bash -s -- --scope global
+curl -fsSL https://raw.githubusercontent.com/YotaGod/blublu/main/install.sh | bash -s -- --scope global
 
 # Target a specific agent platform
-curl -fsSL https://raw.githubusercontent.com/blublu/blublu/main/install.sh | bash -s -- --agent antigravity --scope global
+curl -fsSL https://raw.githubusercontent.com/YotaGod/blublu/main/install.sh | bash -s -- --agent antigravity --scope global
 ```
 
 ### B. Windows (PowerShell)
 
 ```powershell
 # Install to current repository (Project Scope)
-iwr -useb https://raw.githubusercontent.com/blublu/blublu/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/YotaGod/blublu/main/install.ps1 | iex
 
 # Install globally for all repositories
-& { iwr -useb https://raw.githubusercontent.com/blublu/blublu/main/install.ps1 } -Scope global
+& { iwr -useb https://raw.githubusercontent.com/YotaGod/blublu/main/install.ps1 } -Scope global
 
 # Target a specific agent platform
-& { iwr -useb https://raw.githubusercontent.com/blublu/blublu/main/install.ps1 } -Agent antigravity -Scope global
+& { iwr -useb https://raw.githubusercontent.com/YotaGod/blublu/main/install.ps1 } -Agent antigravity -Scope global
 ```
 
 ### Installer CLI Flags

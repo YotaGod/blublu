@@ -55,7 +55,7 @@ AGENT="all"
 CUSTOM_TARGET_DIR=""
 DRY_RUN=false
 UPGRADE=false
-REPO_RAW_BASE="https://raw.githubusercontent.com/blublu/blublu/main"
+REPO_RAW_BASE="https://raw.githubusercontent.com/YotaGod/blublu/main"
 
 # Skill source relative paths
 SKILL_REL_DIR="skills/blublu"

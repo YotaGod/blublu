@@ -86,20 +86,20 @@ Modern AI coding agents (such as Google Antigravity, Anthropic Claude Code, and 
 
 ```bash
 # Install to current repository (Project Scope)
-curl -fsSL https://raw.githubusercontent.com/blublu/blublu/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/YotaGod/blublu/main/install.sh | bash
 
 # Install globally for all agent sessions (Global Scope)
-curl -fsSL https://raw.githubusercontent.com/blublu/blublu/main/install.sh | bash -s -- --scope global
+curl -fsSL https://raw.githubusercontent.com/YotaGod/blublu/main/install.sh | bash -s -- --scope global
 ```
 
 ### Option B: Install via PowerShell (Windows)
 
 ```powershell
 # Install to current repository (Project Scope)
-iwr -useb https://raw.githubusercontent.com/blublu/blublu/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/YotaGod/blublu/main/install.ps1 | iex
 
 # Install globally for all agent sessions (Global Scope)
-& { iwr -useb https://raw.githubusercontent.com/blublu/blublu/main/install.ps1 } -Scope global
+& { iwr -useb https://raw.githubusercontent.com/YotaGod/blublu/main/install.ps1 } -Scope global
 ```
 
 *For custom agents, manual skill copies, and dry-run flags, see the [Installation Guide](docs/installation.md).*

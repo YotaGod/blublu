@@ -58,7 +58,7 @@ blublu v1.0 Installer — AI Codebase Memory & Architecture Tracking System
 
 USAGE:
     .\scripts\install.ps1 [OPTIONS]
-    & { iwr -useb https://raw.githubusercontent.com/blublu/blublu/main/scripts/install.ps1 } [OPTIONS]
+    & { iwr -useb https://raw.githubusercontent.com/YotaGod/blublu/main/scripts/install.ps1 } [OPTIONS]
 
 OPTIONS:
     -Scope <project|global>                 Installation scope (default: project)
@@ -114,7 +114,7 @@ function Write-LogDryRun ($message) {
 # ------------------------------------------------------------------------------
 # Paths and File Declarations
 # ------------------------------------------------------------------------------
-$RepoRawBase = "https://raw.githubusercontent.com/blublu/blublu/main"
+$RepoRawBase = "https://raw.githubusercontent.com/YotaGod/blublu/main"
 $SkillRelDir = "skills/blublu"
 $SkillFiles = @(
     "SKILL.md",
