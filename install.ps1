@@ -291,17 +291,17 @@ $MarkerEnd
     Write-Host "     [SUCCESS] blublu installation completed!             " -ForegroundColor Green
     Write-Host "==========================================================" -ForegroundColor Green
     Write-Host ""
-    Write-Host "Cara Menggunakan blublu (How to Use):" -ForegroundColor White
+    Write-Host "Quick Start Guide:" -ForegroundColor White
     Write-Host ""
-    Write-Host "1. Di Terminal / Command Prompt:" -ForegroundColor Cyan
-    Write-Host "   Buka terminal baru, lalu ketik:"
+    Write-Host "1. In Terminal / Command Prompt:" -ForegroundColor Cyan
+    Write-Host "   Open a new terminal window and run:"
     Write-Host "     blublu status" -ForegroundColor Yellow
     Write-Host "     blublu init" -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "2. Lewat AI Agent (Antigravity / Claude Code / Codex / Cursor):" -ForegroundColor Cyan
-    Write-Host "   Kirim prompt sederhana seperti:"
-    Write-Host "     `"Inisialisasi arsitektur repo ini dengan blublu`"" -ForegroundColor Yellow
-    Write-Host "     `"Periksa arsitektur dan jalankan blublu validate`"" -ForegroundColor Yellow
+    Write-Host "2. In your AI Coding Agent (Antigravity / Claude Code / Codex / Cursor):" -ForegroundColor Cyan
+    Write-Host "   Simply send a natural prompt such as:"
+    Write-Host "     `"Initialize blublu on this codebase`"" -ForegroundColor Yellow
+    Write-Host "     `"Check architecture drift with blublu`"" -ForegroundColor Yellow
     Write-Host ""
 }
 

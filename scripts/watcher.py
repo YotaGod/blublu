@@ -145,7 +145,7 @@ def record_pending_changes(root_path: Path, changed_files: list):
         print(f"[WARN] Failed to write pending changes: {exc}", file=sys.stderr)
 
 
-def start_watcher(root_path: Path, debounce_ms: int = 2000, max_iterations: int = 0):
+def start_watcher(root_path: Path, debounce_ms: int = 2000, max_iterations: int = 0, scope: str = None):
     """
     Main watcher loop (v2.0.0).
     Polls directory changes with debouncing, updates .agents/.pending-changes.json.
@@ -179,7 +179,8 @@ def start_watcher(root_path: Path, debounce_ms: int = 2000, max_iterations: int 
     signal.signal(signal.SIGINT, cleanup)
     signal.signal(signal.SIGTERM, cleanup)
 
-    print(f"[*] blublu Watcher v2.0.0 started on '{root_path}' (PID: {current_pid}, Debounce: {debounce_ms}ms)")
+    scope_str = f", Scope: {scope}" if scope else ""
+    print(f"[*] blublu Watcher v2.0.0 started on '{root_path}' (PID: {current_pid}, Debounce: {debounce_ms}ms{scope_str})")
     poll_interval = max(0.5, debounce_ms / 1000.0)
 
     # Initial snapshot
@@ -207,6 +208,10 @@ def start_watcher(root_path: Path, debounce_ms: int = 2000, max_iterations: int 
                             # Skip if any path component is in WATCHER_IGNORE
                             if any(p in WATCHER_IGNORE for p in parts):
                                 continue
+                            if scope:
+                                scope_clean = scope.strip("/\\").lower()
+                                if not any(scope_clean == p.lower() or scope_clean in p.lower() for p in parts):
+                                    continue
                             valid_changes.append(f)
 
                         if valid_changes:
@@ -294,7 +299,7 @@ def main():
         sys.exit(0)
 
     scope = args.scope if args.scope else None
-    start_watcher(target, debounce_ms=args.debounce, max_iterations=args.iterations)
+    start_watcher(target, debounce_ms=args.debounce, max_iterations=args.iterations, scope=scope)
 
 
 if __name__ == "__main__":
