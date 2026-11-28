@@ -9,7 +9,7 @@ This document defines the test scenarios for verifying hierarchical blueprint na
 
 ## Scenario 1: Initialize Blueprint on 15-Service Monorepo
 
-**Input**: Run `codsblu init --distributed --path tests/fixtures/enterprise-monorepo` on a fresh checkout.
+**Input**: Run `blublu init --distributed --path tests/fixtures/enterprise-monorepo` on a fresh checkout.
 
 **Expected Agent Behavior**:
 - Scans the top-level directory tree (apps/, packages/, services/, infra/).
@@ -32,7 +32,7 @@ This document defines the test scenarios for verifying hierarchical blueprint na
 - `.agents/codebase-map.md` exists and is non-empty.
 - `.agents/sub-blueprints/` directory exists with ≥1 `.md` file.
 - Level 1 token budget: Content is concise (target ≤700 tokens).
-- `codsblu validate --path tests/fixtures/enterprise-monorepo` passes with exit code 0.
+- `blublu validate --path tests/fixtures/enterprise-monorepo` passes with exit code 0.
 
 ---
 
@@ -105,7 +105,7 @@ This document defines the test scenarios for verifying hierarchical blueprint na
 6. Agent implements the change in `packages/shared-auth/src/index.js`.
 7. Agent updates `shared-libs.md` to reflect the new JWT payload field.
 
-**Expected CLI Output (codsblu validate after change)**:
+**Expected CLI Output (blublu validate after change)**:
 ```
 [WARN] shared-auth interface changed. 8 downstream consumers may be affected.
        Consumers: api-gateway, user-service, order-service, billing-service, ...
@@ -121,7 +121,7 @@ This document defines the test scenarios for verifying hierarchical blueprint na
 
 ## Scenario 5: CLI Status Command on Enterprise Fixture
 
-**Command**: `python scripts/codsblu.py status --path tests/fixtures/enterprise-monorepo`
+**Command**: `python scripts/blublu.py status --path tests/fixtures/enterprise-monorepo`
 
 **Expected Output** (approximate):
 ```

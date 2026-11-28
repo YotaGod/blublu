@@ -5,4 +5,4 @@ PYTHON_BIN="python3"
 if ! command -v python3 >/dev/null 2>&1; then
     PYTHON_BIN="python"
 fi
-exec "$PYTHON_BIN" "$SCRIPT_DIR/codsblu.py" "$@"
+exec "$PYTHON_BIN" "$SCRIPT_DIR/blublu.py" "$@"

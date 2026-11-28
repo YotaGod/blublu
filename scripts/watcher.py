@@ -36,7 +36,7 @@ except ImportError:
     scanner = None
 
 
-PID_FILE_REL = Path(".agents") / ".codsblu.pid"
+PID_FILE_REL = Path(".agents") / ".blublu.pid"
 PENDING_FILE_REL = Path(".agents") / ".pending-changes.json"
 VALIDATION_FILE_REL = Path(".agents") / ".scheduled-validation.json"
 MAX_CONSECUTIVE_ERRORS = 10

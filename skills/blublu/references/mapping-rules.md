@@ -207,7 +207,7 @@ To prevent context exhaustion and irrelevant noise, AI agents MUST NEVER scan or
 ### Version Control & Agent Tracking
 - `.git/`, `.svn/`, `.hg/`
 - `.agents/scratch/` (Temporary agent notes; do not index as source)
-- `.agents/.pending-changes.json`, `.agents/.codsblu.pid`, `.agents/.cache_scan.json` (Runtime artifacts)
+- `.agents/.pending-changes.json`, `.agents/.blublu.pid`, `.agents/.cache_scan.json` (Runtime artifacts)
 
 ### Caches, Temporary Files & Logs
 - `.cache/`, `.turbo/`, `.parcel-cache/`

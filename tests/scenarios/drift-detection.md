@@ -3,7 +3,7 @@
 This document defines test scenarios for the `--check-drift` flag introduced in blublu v2.0.0.
 
 **Command**: `python scripts/validate-blueprint.py --path <blueprint> --check-drift [--drift-exceptions <modules>]`
-**CLI shortcut**: `python scripts/codsblu.py drift --path <dir>`
+**CLI shortcut**: `python scripts/blublu.py drift --path <dir>`
 
 **Safety Guarantee**: ALL drift detection is READ-ONLY. Blueprint files are NEVER modified automatically.
 

@@ -3,7 +3,7 @@
 This document defines test scenarios for dependency discovery, Confidence labeling, and circular dependency detection in blublu v2.0.0.
 
 **Commands**:
-- `python scripts/codsblu.py dependencies --path <dir> [--module <name>] [--format table|json]`
+- `python scripts/blublu.py dependencies --path <dir> [--module <name>] [--format table|json]`
 - Blueprint dependency tables follow format: `| Source | Target | Type | Label | Evidence | Confidence |`
 
 ---
@@ -43,7 +43,7 @@ const { KAFKA_TOPICS } = require('@nexus/shared-config');
 
 **Verification**:
 ```bash
-python scripts/codsblu.py dependencies \
+python scripts/blublu.py dependencies \
   --path tests/fixtures/enterprise-monorepo \
   --module EventPublisher \
   --format table
@@ -80,13 +80,13 @@ graph TD
 ```
 
 **Expected Behavior**:
-1. `codsblu dependencies` detects the cycle.
+1. `blublu dependencies` detects the cycle.
 2. Each node in the cycle is flagged.
 3. Cycle path is printed: `ModuleA → ModuleB → ModuleC → ModuleA`.
 
 **Command**:
 ```bash
-python scripts/codsblu.py dependencies \
+python scripts/blublu.py dependencies \
   --path tests/fixtures/simple-node-app \
   --format json
 ```
@@ -118,7 +118,7 @@ python scripts/codsblu.py dependencies \
 
 **Command**:
 ```bash
-python scripts/codsblu.py dependencies \
+python scripts/blublu.py dependencies \
   --path tests/fixtures/enterprise-monorepo \
   --module OrderService \
   --format table
@@ -148,7 +148,7 @@ python scripts/codsblu.py dependencies \
 
 **Command**:
 ```bash
-python scripts/codsblu.py dependencies \
+python scripts/blublu.py dependencies \
   --path tests/fixtures/enterprise-monorepo \
   --format json
 ```

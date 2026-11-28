@@ -8,7 +8,7 @@ This scenario verifies the CLI commands and the local background file watcher im
 
 ### A. Status Command
 ```bash
-python scripts/codsblu.py status --path tests/fixtures/distributed-app
+python scripts/blublu.py status --path tests/fixtures/distributed-app
 ```
 **Expected Output**:
 - Displays `Architecture Mode: Distributed (2 sub-blueprints)`.
@@ -18,7 +18,7 @@ python scripts/codsblu.py status --path tests/fixtures/distributed-app
 
 ### B. Validation via CLI
 ```bash
-python scripts/codsblu.py validate --path tests/fixtures/distributed-app --strict --check-files
+python scripts/blublu.py validate --path tests/fixtures/distributed-app --strict --check-files
 ```
 **Expected Output**:
 - Runs validation and exits with code `0`.
@@ -26,7 +26,7 @@ python scripts/codsblu.py validate --path tests/fixtures/distributed-app --stric
 ### C. Migration to Distributed
 Test migration on a copy of a single-file fixture:
 ```bash
-python scripts/codsblu.py migrate --to-distributed --path tests/fixtures/simple-node-app
+python scripts/blublu.py migrate --to-distributed --path tests/fixtures/simple-node-app
 ```
 **Expected Output**:
 - Sub-blueprints created inside `.agents/sub-blueprints/`.
@@ -38,13 +38,13 @@ python scripts/codsblu.py migrate --to-distributed --path tests/fixtures/simple-
 
 ### A. Start Watcher
 ```bash
-python scripts/codsblu.py watch --path tests/fixtures/simple-node-app --debounce 1000 &
+python scripts/blublu.py watch --path tests/fixtures/simple-node-app --debounce 1000 &
 ```
-- Creates PID file: `tests/fixtures/simple-node-app/.agents/.codsblu.pid`.
+- Creates PID file: `tests/fixtures/simple-node-app/.agents/.blublu.pid`.
 
 ### B. Verify Status
 ```bash
-python scripts/codsblu.py status --path tests/fixtures/simple-node-app
+python scripts/blublu.py status --path tests/fixtures/simple-node-app
 ```
 - Reports `Background Watcher: RUNNING (PID: ...)`.
 
@@ -58,7 +58,7 @@ sleep 1.5
 
 ### D. Stop Watcher
 ```bash
-python scripts/codsblu.py stop --path tests/fixtures/simple-node-app
+python scripts/blublu.py stop --path tests/fixtures/simple-node-app
 ```
 - Process terminated, PID file removed.
 - Status returns `Background Watcher: STOPPED`.

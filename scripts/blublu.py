@@ -5,10 +5,10 @@ Autonomous codebase memory management, validation, status reporting, migration,
 drift detection, dependency analysis, module inspection, and filesystem watcher.
 
 New in v2.0.0:
-  codsblu drift      -- Classify architecture drift per module (4 categories)
-  codsblu analyze    -- Show hierarchical context for a specific module (L1→L3)
-  codsblu dependencies -- Display dependency map for a module or entire project
-  codsblu watch --scope <domain> -- Domain-scoped filesystem monitoring
+  blublu drift      -- Classify architecture drift per module (4 categories)
+  blublu analyze    -- Show hierarchical context for a specific module (L1→L3)
+  blublu dependencies -- Display dependency map for a module or entire project
+  blublu watch --scope <domain> -- Domain-scoped filesystem monitoring
 
 Dependencies: Pure Python 3 standard library.
 """
@@ -196,7 +196,7 @@ def cmd_status(args):
     print(f"Project Root:       {root}")
 
     if not blueprint.is_file():
-        print(f"Blueprint:          MISSING (Run 'codsblu init' to create)")
+        print(f"Blueprint:          MISSING (Run 'blublu init' to create)")
         print("=" * 60)
         return 1
 
@@ -248,7 +248,7 @@ def cmd_status(args):
             except Exception:
                 print("Background Watcher: STOPPED")
         else:
-            print("Background Watcher: STOPPED (Run 'codsblu watch' to start)")
+            print("Background Watcher: STOPPED (Run 'blublu watch' to start)")
 
         pending_file = watcher.get_pending_file(root)
         if pending_file.is_file():
@@ -570,7 +570,7 @@ def cmd_analyze(args):
     module_name = getattr(args, "module_name", "").strip()
 
     if not module_name:
-        print("[ERR] Please provide a module name: codsblu analyze <module-name>", file=sys.stderr)
+        print("[ERR] Please provide a module name: blublu analyze <module-name>", file=sys.stderr)
         return 1
 
     if not blueprint.is_file():
@@ -642,7 +642,7 @@ def cmd_analyze(args):
             print(f"  → Full domain context: {l2_file.relative_to(root)}")
         else:
             print(f"\n[Level 2] '{module_name}' not found in any domain sub-blueprint.")
-            print(f"  → No Level 2 file exists yet. Use 'codsblu migrate --to-distributed' to create them.")
+            print(f"  → No Level 2 file exists yet. Use 'blublu migrate --to-distributed' to create them.")
 
     # Level 3: Check for module-level blueprint
     l3_found = False
@@ -784,7 +784,7 @@ def cmd_dependencies(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="codsblu",
+        prog="blublu",
         description="Codsblu v2.0.0 — AI Codebase Memory & Architecture Tracking CLI",
     )
     subparsers = parser.add_subparsers(dest="subcommand", help="Available subcommands")
