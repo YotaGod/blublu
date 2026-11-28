@@ -179,7 +179,7 @@ def start_watcher(root_path: Path, debounce_ms: int = 2000, max_iterations: int 
     signal.signal(signal.SIGINT, cleanup)
     signal.signal(signal.SIGTERM, cleanup)
 
-    print(f"[*] Codsblu Watcher v2.0.0 started on '{root_path}' (PID: {current_pid}, Debounce: {debounce_ms}ms)")
+    print(f"[*] blublu Watcher v2.0.0 started on '{root_path}' (PID: {current_pid}, Debounce: {debounce_ms}ms)")
     poll_interval = max(0.5, debounce_ms / 1000.0)
 
     # Initial snapshot
@@ -249,7 +249,7 @@ def start_watcher(root_path: Path, debounce_ms: int = 2000, max_iterations: int 
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Codsblu Local Filesystem Watcher v2.0.0")
+    parser = argparse.ArgumentParser(description="blublu Local Filesystem Watcher v2.0.0")
     parser.add_argument("--path", default=".", help="Project root to watch")
     parser.add_argument("--debounce", type=int, default=2000, help="Debounce delay in ms (default: 2000)")
     parser.add_argument("--stop", action="store_true", help="Stop running background watcher")
@@ -270,7 +270,7 @@ def main():
     if args.stop:
         stopped = stop_watcher(target)
         if stopped:
-            print("✔ Codsblu watcher stopped.")
+            print("✔ blublu watcher stopped.")
         else:
             print("No active watcher process was found.")
         sys.exit(0)
@@ -281,7 +281,7 @@ def main():
             try:
                 pid = int(pid_file.read_text(encoding="utf-8").strip())
                 if is_process_running(pid):
-                    print(f"✔ Codsblu watcher is RUNNING (PID: {pid}).")
+                    print(f"✔ blublu watcher is RUNNING (PID: {pid}).")
                     pending = get_pending_file(target)
                     if pending.is_file():
                         with open(pending, "r", encoding="utf-8") as f:
@@ -290,7 +290,7 @@ def main():
                     sys.exit(0)
             except Exception:
                 pass
-        print("Codsblu watcher is NOT running.")
+        print("blublu watcher is NOT running.")
         sys.exit(0)
 
     scope = args.scope if args.scope else None

@@ -940,7 +940,7 @@ def main():
         status_symbol = "✔ PASS" if res["valid"] else "✖ FAIL"
         mode_str = "Distributed" if res.get("distributed_mode") else "Single-File"
         print("=" * 60)
-        print(f" Codsblu (blublu) Blueprint Validator v2.0.0 — {status_symbol} ({mode_str})")
+        print(f" blublu (blublu) Blueprint Validator v2.0.0 — {status_symbol} ({mode_str})")
         print("=" * 60)
         print(f"File:               {res['file']}")
         print(f"Total Modules:      {res['metrics']['total_modules']}")

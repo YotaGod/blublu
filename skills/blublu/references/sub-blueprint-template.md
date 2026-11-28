@@ -1,6 +1,6 @@
 # Sub-Blueprint Template: `.agents/sub-blueprints/<domain>.md`
 
-This document defines the canonical schema for domain-specific sub-blueprints in **Codsblu v1.2.0 Distributed Mode**.
+This document defines the canonical schema for domain-specific sub-blueprints in **blublu v1.2.0 Distributed Mode**.
 When a codebase employs distributed blueprints, the root `.agents/codebase-map.md` acts as the index, while detailed module registries and domain-specific schemas live inside `.agents/sub-blueprints/`.
 
 > **Context-Aware Loading Rule for AI Agents**:
@@ -13,7 +13,7 @@ When a codebase employs distributed blueprints, the root `.agents/codebase-map.m
 # Domain Blueprint: [Domain Name]
 
 > Parent Index: `../codebase-map.md`
-> Maintained by **Codsblu (blublu)**. Source code is the ultimate truth.
+> Maintained by **blublu (blublu)**. Source code is the ultimate truth.
 
 ---
 

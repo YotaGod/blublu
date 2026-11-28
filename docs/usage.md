@@ -148,7 +148,7 @@ python scripts/validate-blueprint.py
 - If a diagram is invalid, the validator automatically prints a **Fallback Relationship Table** recommendation in Markdown so you can replace the broken diagram immediately.
 
 ### D. GitHub Actions CI Integration
-Codsblu ships with two official GitHub Actions workflows in `.github/workflows/`:
+blublu ships with two official GitHub Actions workflows in `.github/workflows/`:
 1. `blublu-validate.yml`: Runs on push and PR to ensure blueprint syntax, table structure, and referenced files are valid.
 2. `blublu-architecture-check.yml`: Analyzes PR file deltas and posts a warning annotation if code files were changed without synchronizing `.agents/codebase-map.md`.
 

@@ -126,7 +126,7 @@ This document defines the test scenarios for verifying hierarchical blueprint na
 **Expected Output** (approximate):
 ```
 ============================================================
- Codsblu (blublu) v2.0.0 — Architecture Status
+ blublu (blublu) v2.0.0 — Architecture Status
 ============================================================
 Project Root:       tests/fixtures/enterprise-monorepo
 Blueprint:          .agents/codebase-map.md

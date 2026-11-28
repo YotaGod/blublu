@@ -7,7 +7,7 @@
 ## 1. Project Overview
 
 - **Name**: malformed-mermaid-fixture
-- **Core Purpose**: Deliberately corrupted Mermaid diagram fixture for testing the Codsblu v1.1.0 validator.
+- **Core Purpose**: Deliberately corrupted Mermaid diagram fixture for testing the blublu v1.1.0 validator.
 - **Primary Tech Stack**: Node.js
 - **Target Platform**: Node.js
 - **Repository Pattern**: Monolith

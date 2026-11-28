@@ -1,4 +1,4 @@
-name: Codsblu Architecture Drift Check
+name: blublu Architecture Drift Check
 
 on:
   pull_request:

@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Codsblu CLI entrypoint wrapper for Windows PowerShell
+    blublu CLI entrypoint wrapper for Windows PowerShell
 #>
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PythonBin = (Get-Command python, python3 -ErrorAction SilentlyContinue | Select-Object -First 1).Source

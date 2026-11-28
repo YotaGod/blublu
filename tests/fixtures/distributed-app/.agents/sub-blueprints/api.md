@@ -1,7 +1,7 @@
 # Domain Blueprint: API
 
 > Parent Index: `../codebase-map.md`
-> Maintained by **Codsblu (blublu)**.
+> Maintained by **blublu (blublu)**.
 
 ---
 

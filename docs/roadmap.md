@@ -1,6 +1,6 @@
-# Codsblu (blublu) Product Roadmap
+# blublu (blublu) Product Roadmap
 
-This document outlines the strategic engineering roadmap for **Codsblu (blublu) — AI Codebase Memory & Architecture Tracking System** across major release milestones.
+This document outlines the strategic engineering roadmap for **blublu (blublu) — AI Codebase Memory & Architecture Tracking System** across major release milestones.
 
 ---
 

@@ -1,6 +1,6 @@
-# Test Scenario: Codsblu CLI & Local Filesystem Watcher
+# Test Scenario: blublu CLI & Local Filesystem Watcher
 
-This scenario verifies the CLI commands and the local background file watcher implemented in **Codsblu v1.2.0**.
+This scenario verifies the CLI commands and the local background file watcher implemented in **blublu v1.2.0**.
 
 ---
 

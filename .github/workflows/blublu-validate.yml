@@ -1,4 +1,4 @@
-name: Codsblu Blueprint Validation
+name: blublu Blueprint Validation
 
 on:
   push:

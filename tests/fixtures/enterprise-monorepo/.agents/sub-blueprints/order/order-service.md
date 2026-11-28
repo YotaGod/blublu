@@ -103,6 +103,6 @@ interface OrderFilters {
 ## 8. Verification Metadata
 
 - **Last Verified**: 2026-11-27
-- **Verified By**: blublu v2.0.0 (Codsblu)
+- **Verified By**: blublu v2.0.0 (blublu)
 - **Verification Method**: Direct source file inspection (`apps/order-service/src/order.service.js`)
 - **Next Review Trigger**: Any change to `processOrder`, `cancelOrder`, or the orders/order_items schema

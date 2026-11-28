@@ -1,6 +1,6 @@
 # Codebase Blueprint: Nexus Commerce Platform
 
-> Auto-generated and maintained by **Codsblu (blublu) v2.0.0**. Source code is the ultimate truth.
+> Auto-generated and maintained by **blublu (blublu) v2.0.0**. Source code is the ultimate truth.
 > **Architecture Level**: Level 1 — Global Architecture Index
 
 ---
@@ -210,7 +210,7 @@ Each service owns its own PostgreSQL database (schema isolation). Shared-db prov
 ## 15. Mapping Health
 
 - **Last Updated**: 2026-11-27
-- **Agent / Tool**: blublu v2.0.0 (Codsblu)
+- **Agent / Tool**: blublu v2.0.0 (blublu)
 - **Architecture Mode**: Distributed (10 sub-blueprints)
 - **Total Packages Tracked**: 15
 - **Verification Ratio**: 6/13 domains verified (46% — initial scan, Level 2 details in sub-blueprints)

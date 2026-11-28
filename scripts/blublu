@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Codsblu CLI entrypoint wrapper for Linux & macOS
+# blublu CLI entrypoint wrapper for Linux & macOS
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PYTHON_BIN="python3"
 if ! command -v python3 >/dev/null 2>&1; then

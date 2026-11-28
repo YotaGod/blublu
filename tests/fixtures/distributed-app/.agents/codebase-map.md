@@ -1,13 +1,13 @@
 # Codebase Blueprint: Distributed Multi-Domain System
 
-> Auto-generated and maintained by **Codsblu (blublu)**. Source code is the ultimate truth.
+> Auto-generated and maintained by **blublu (blublu)**. Source code is the ultimate truth.
 
 ---
 
 ## 1. Project Overview
 
 - **Name**: distributed-app
-- **Core Purpose**: Multi-domain monorepo demonstrating Codsblu v1.2.0 distributed sub-blueprints.
+- **Core Purpose**: Multi-domain monorepo demonstrating blublu v1.2.0 distributed sub-blueprints.
 - **Primary Tech Stack**: Node.js, Express, HTML5.
 - **Target Platform**: Node.js & Evergreen Browsers.
 - **Repository Pattern**: Distributed Monorepo
@@ -123,7 +123,7 @@ graph TD
 ## 15. Mapping Health
 
 - **Last Updated**: 2026-11-27 09:20 UTC
-- **Agent / Tool**: Codsblu v1.2.0
+- **Agent / Tool**: blublu v1.2.0
 - **Health Status**: Healthy
 - **Total Tracked Modules**: 2
 - **Verification Ratio**: 100%

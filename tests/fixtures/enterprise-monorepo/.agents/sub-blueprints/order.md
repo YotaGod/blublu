@@ -84,6 +84,6 @@ graph TD
 ## 7. Mapping Health
 
 - **Last Updated**: 2026-11-27
-- **Agent / Tool**: blublu v2.0.0 (Codsblu)
+- **Agent / Tool**: blublu v2.0.0 (blublu)
 - **Verification Ratio**: 6/7 modules verified (86%)
 - **Health**: Healthy

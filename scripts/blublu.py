@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Codsblu (blublu) v2.0.0 — Unified CLI Engine
+blublu (blublu) v2.0.0 — Unified CLI Engine
 Autonomous codebase memory management, validation, status reporting, migration,
 drift detection, dependency analysis, module inspection, and filesystem watcher.
 
@@ -78,7 +78,7 @@ def cmd_init(args):
     if not content:
         content = f"""# Codebase Blueprint: {proj_name}
 
-> Auto-generated and maintained by **Codsblu (blublu)**. Source code is the ultimate truth.
+> Auto-generated and maintained by **blublu (blublu)**. Source code is the ultimate truth.
 
 ---
 
@@ -153,13 +153,13 @@ graph TD
 ---
 
 ## 14. Recent Architectural Changes
-- **{datetime.now(timezone.utc).strftime('%Y-%m-%d')}**: Initialized Codsblu architectural blueprint.
+- **{datetime.now(timezone.utc).strftime('%Y-%m-%d')}**: Initialized blublu architectural blueprint.
 
 ---
 
 ## 15. Mapping Health
 - **Last Updated**: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
-- **Agent / Tool**: Codsblu v1.2.0
+- **Agent / Tool**: blublu v2.0.0
 - **Health Status**: Healthy
 - **Total Tracked Modules**: 0
 - **Verification Ratio**: 100%
@@ -191,7 +191,7 @@ def cmd_status(args):
     sub_dir = get_sub_blueprints_dir(root)
 
     print("=" * 60)
-    print(" Codsblu (blublu) v1.2.0 — Architecture Status")
+    print(" blublu v2.0.0 — Architecture Status")
     print("=" * 60)
     print(f"Project Root:       {root}")
 
@@ -360,7 +360,7 @@ def cmd_migrate(args):
         sub_content = f"""# Domain Blueprint: {domain.capitalize()}
 
 > Parent Index: `../codebase-map.md`
-> Maintained by **Codsblu (blublu)**.
+> Maintained by **blublu (blublu)**.
 
 ---
 
@@ -449,7 +449,7 @@ def cmd_stop(args):
 
     stopped = watcher.stop_watcher(root)
     if stopped:
-        print("✔ Codsblu background watcher stopped.")
+        print("✔ blublu background watcher stopped.")
     else:
         print("No active watcher process was running.")
     return 0
@@ -531,7 +531,7 @@ def cmd_drift(args):
         report = drift_result["drift_report"]
         summary = drift_result["summary"]
         print("=" * 60)
-        print(" Architecture Drift Report (Codsblu v2.0.0)")
+        print(" Architecture Drift Report (blublu v2.0.0)")
         print("=" * 60)
         print(f"Confirmed Drift:          {summary['confirmed']}")
         print(f"Potential Drift:          {summary['potential']}")
@@ -785,7 +785,7 @@ def cmd_dependencies(args):
 def main():
     parser = argparse.ArgumentParser(
         prog="blublu",
-        description="Codsblu v2.0.0 — AI Codebase Memory & Architecture Tracking CLI",
+        description="blublu v2.0.0 — AI Codebase Memory & Architecture Tracking CLI",
     )
     subparsers = parser.add_subparsers(dest="subcommand", help="Available subcommands")
 

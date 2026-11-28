@@ -1,6 +1,6 @@
 # Test Scenario: Distributed Blueprint Architecture & Progressive Loading
 
-This scenario evaluates the **Codsblu v1.2.0 Distributed Architecture** capabilities, testing:
+This scenario evaluates the **blublu v1.2.0 Distributed Architecture** capabilities, testing:
 1. Multi-domain index parsing via `Sub-Blueprints Index`.
 2. Validation of all registered sub-blueprints.
 3. Detection of orphaned sub-blueprints.
